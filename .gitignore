@@ -1,0 +1,10 @@
+*.exe
+*.rar
+*.sublime-project
+*.sublime-workspace
+spider_workspace/cache
+spider_workspace/file_out
+spider_workspace/history
+spider_workspace/logs
+spider_workspace/text_out
+/*.log
