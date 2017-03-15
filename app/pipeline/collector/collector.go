@@ -93,7 +93,6 @@ func (self *Collector) Start() {
 		go func() {
 			defer func() {
 				recover()
-				// println("DataChanStop$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 			}()
 			for data := range self.DataChan {
 				// 缓存分批数据
@@ -117,7 +116,6 @@ func (self *Collector) Start() {
 		go func() {
 			defer func() {
 				recover()
-				// println("FileChanStop$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 			}()
 			// 只有当收到退出通知并且通道内无数据时，才退出循环
 			for file := range self.FileChan {
@@ -130,11 +128,9 @@ func (self *Collector) Start() {
 
 		<-dataStop
 		<-fileStop
-		// println("OutputWaitStopping++++++++++++++++++++++++++++++++")
 
 		// 等待所有输出完成
 		self.wait.Wait()
-		// println("OutputStopped$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
 		// 返回报告
 		self.Report()

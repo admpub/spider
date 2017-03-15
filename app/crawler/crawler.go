@@ -119,7 +119,6 @@ func (self *crawler) Process(req *request.Request) {
 	defer func() {
 		if p := recover(); p != nil {
 			if sp.IsStopping() {
-				// println("Process$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 				return
 			}
 			// 返回是否作为新的失败请求被添加至队列尾部
@@ -143,7 +142,6 @@ func (self *crawler) Process(req *request.Request) {
 	}()
 
 	var ctx = self.Downloader.Download(sp, req) // download page
-
 	if err := ctx.GetError(); err != nil {
 		// 返回是否作为新的失败请求被添加至队列尾部
 		if sp.DoHistory(req, false) {

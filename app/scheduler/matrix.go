@@ -85,6 +85,7 @@ func (self *Matrix) Push(req *request.Request) {
 	if !req.IsReloadable() {
 		// 已存在成功记录时退出
 		if self.hasHistory(req.Unique()) {
+			logs.Log.Informational(" *     已存在成功记录，跳过：%v\n", req.Url)
 			return
 		}
 		// 添加到临时记录
@@ -226,7 +227,6 @@ func (self *Matrix) TryFlushFailure() {
 // 等待处理中的请求完成
 func (self *Matrix) Wait() {
 	if sdl.checkStatus(status.STOP) {
-		// println("Wait$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 		// 主动终止任务时，不等待运行中任务自然结束
 		return
 	}

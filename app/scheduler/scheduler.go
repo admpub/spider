@@ -74,7 +74,6 @@ func PauseRecover() {
 
 // 终止任务
 func Stop() {
-	// println("scheduler^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 	sdl.Lock()
 	defer sdl.Unlock()
 	sdl.status = status.STOP
@@ -87,7 +86,6 @@ func Stop() {
 	// }
 	close(sdl.count)
 	sdl.matrices = []*Matrix{}
-	// println("scheduler$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 }
 
 // 每个spider实例分配到的平均资源量
