@@ -36,6 +36,7 @@ type (
 	Function struct {
 		Script string `xml:",chardata"`
 		Param  string `xml:"param,attr"`
+		params []string
 	}
 	FuncParam struct {
 		Name string
@@ -49,19 +50,22 @@ func (f *Function) IsEmpty() bool {
 
 func (f *Function) SetParams(vm *otto.Otto, params ...*FuncParam) {
 	end := len(params) - 1
-	idx := 0
-	for _, p := range strings.Split(f.Param, `,`) {
-		p = strings.TrimSpace(p)
-		if len(p) == 0 {
-			continue
+	if f.params == nil {
+		for _, p := range strings.Split(f.Param, `,`) {
+			p = strings.TrimSpace(p)
+			if len(p) == 0 {
+				continue
+			}
+			f.params = append(f.params, p)
 		}
+	}
+	for idx, p := range f.params {
 		if idx > end {
 			break
 		}
 		vm.Set(p, params[idx].Data)
-		idx++
 	}
-	for ; idx <= end; idx++ {
+	for idx := len(f.params); idx <= end; idx++ {
 		vm.Set(params[idx].Name, params[idx].Data)
 	}
 }

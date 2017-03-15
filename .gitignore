@@ -7,4 +7,9 @@ spider_workspace/file_out
 spider_workspace/history
 spider_workspace/logs
 spider_workspace/text_out
-/*.log
+/app/spider/spider_workspace/cache
+/app/spider/spider_workspace/file_out
+/app/spider/spider_workspace/history
+/app/spider/spider_workspace/logs
+/app/spider/spider_workspace/text_out
+*.log
