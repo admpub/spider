@@ -17,6 +17,8 @@ func Router() {
 	http.Handle("/ws", ws.Handler(wsHandle))
 	// 设置websocket报告打印专用路由
 	http.Handle("/ws/log", ws.Handler(wsLogHandle))
+	// 测试规则
+	http.HandleFunc("/rule/testing", ruleController.Testing)
 	//设置http访问的路由
 	http.HandleFunc("/", web)
 	//static file server

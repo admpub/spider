@@ -10,6 +10,7 @@ var Html = function(info) {
                   <tbody id="allSpiders">\
                     <tr>\
                       <th>#</th>\
+                      <th>Testing</th>\
                       <th>ID</th>\
                       <th>Name</th>\
                       <th>Description</th>\
@@ -57,6 +58,7 @@ var spidersHtml = function(spiders) {
                   </label>\
                 </div>\
             </td>\
+            <td><a class="btn btn-success btn-xs" href="/rule/testing?name=' + spiders.menu[i].name + '" target="_blank">测试</a></td>\
             <td><label for="spider-' + i + '">' + i + '</label></td>\
             <td><label for="spider-' + i + '">' + spiders.menu[i].name + '</label></td>\
             <td><label for="spider-' + i + '">' + spiders.menu[i].description + '</label></td>\

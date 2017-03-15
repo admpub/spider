@@ -62,7 +62,7 @@ func (self *SocketController) Write(sessID string, void map[string]interface{}, 
 	defer self.wchanRWMutex.RUnlock()
 
 	// to为1时，只向当前连接发送；to为-1时，向除当前连接外的其他所有连接发送；to为0时或为空时，向所有连接发送
-	var t int = 0
+	var t int
 	if len(to) > 0 {
 		t = to[0]
 	}
@@ -202,13 +202,9 @@ func init() {
 		if app.LogicApp.GetAppConf("mode").(int) != status.OFFLINE {
 			Sc.Write(sessID, map[string]interface{}{"operate": "stop"})
 			return
-		} else {
-			// println("stopping^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-			app.LogicApp.Stop()
-			// println("stopping++++++++++++++++++++++++++++++++++++++++")
-			Sc.Write(sessID, map[string]interface{}{"operate": "stop"})
-			// println("stopping$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 		}
+		app.LogicApp.Stop()
+		Sc.Write(sessID, map[string]interface{}{"operate": "stop"})
 	}
 
 	// 任务暂停与恢复，目前仅支持单机模式
