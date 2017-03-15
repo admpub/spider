@@ -31,7 +31,11 @@ type Collector struct {
 func NewCollector(sp *spider.Spider) *Collector {
 	var self = &Collector{}
 	self.Spider = sp
-	self.outType = cache.Task.OutType
+	if len(sp.OutType) > 0 {
+		self.outType = sp.OutType
+	} else {
+		self.outType = cache.Task.OutType
+	}
 	if cache.Task.DockerCap < 1 {
 		cache.Task.DockerCap = 1
 	}

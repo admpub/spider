@@ -1,6 +1,7 @@
 package spider
 
 import (
+	"io"
 	"math"
 	"sync"
 	"time"
@@ -32,6 +33,8 @@ type (
 		Namespace       func(self *Spider) string                                  // 命名空间，用于输出文件、路径的命名
 		SubNamespace    func(self *Spider, dataCell map[string]interface{}) string // 次级命名，用于输出文件、路径的命名，可依赖具体数据内容
 		RuleTree        *RuleTree                                                  // 定义具体的采集规则树
+		OutType         string                                                     //数据输出类型(针对某一个采集规则)
+		Writer          io.Writer                                                  //测试时，获取输出结果
 
 		// 以下字段系统自动赋值
 		id        int               // 自动分配的SpiderQueue中的索引

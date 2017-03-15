@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/admpub/spider/app"
+	"github.com/admpub/spider/app/crawler"
 )
 
 var ruleController = &RuleController{}
@@ -20,7 +21,10 @@ func (r *RuleController) Testing(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(`没有找到规则：` + name))
 		return
 	}
-	c := app.LogicApp.CrawlerPool.Use()
+	c := crawler.New(0)
+	_spider.OutType = `testing`
+	_spider.Writer = w
+	_spider.Limit = 1
 	c.Init(_spider).Run()
 	w.Write([]byte(`Hello:` + name))
 }
