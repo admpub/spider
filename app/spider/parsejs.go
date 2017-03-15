@@ -4,13 +4,13 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"log"
-	"path"
 	"path/filepath"
+	"strings"
 
-	"github.com/robertkrimen/otto"
-
+	"github.com/admpub/confl"
 	"github.com/admpub/spider/config"
 	"github.com/admpub/spider/logs"
+	"github.com/robertkrimen/otto"
 )
 
 // 蜘蛛规则解释器模型
@@ -23,17 +23,48 @@ type (
 		EnableKeyin     bool        `xml:"EnableKeyin"`
 		EnableCookie    bool        `xml:"EnableCookie"`
 		NotDefaultField bool        `xml:"NotDefaultField"`
-		Namespace       string      `xml:"Namespace>Script"`
-		SubNamespace    string      `xml:"SubNamespace>Script"`
-		Root            string      `xml:"Root>Script"`
-		Trunk           []RuleModel `xml:"Rule"`
+		Namespace       *Function   `xml:"Namespace>Script"`
+		SubNamespace    *Function   `xml:"SubNamespace>Script"`
+		Root            *Function   `xml:"Root>Script"`
+		Trunk           []RuleModel `xml:"Rule" json:"Rule"`
 	}
 	RuleModel struct {
-		Name      string `xml:"name,attr"`
-		ParseFunc string `xml:"ParseFunc>Script"`
-		AidFunc   string `xml:"AidFunc>Script"`
+		Name      string    `xml:"name,attr"`
+		ParseFunc *Function `xml:"ParseFunc>Script"`
+		AidFunc   *Function `xml:"AidFunc>Script"`
+	}
+	Function struct {
+		Script string `xml:",chardata"`
+		Param  string `xml:"param,attr"`
+	}
+	FuncParam struct {
+		Name string
+		Data interface{}
 	}
 )
+
+func (f *Function) IsEmpty() bool {
+	return len(strings.TrimSpace(f.Script)) == 0
+}
+
+func (f *Function) SetParams(vm *otto.Otto, params ...*FuncParam) {
+	end := len(params) - 1
+	idx := 0
+	for _, p := range strings.Split(f.Param, `,`) {
+		p = strings.TrimSpace(p)
+		if len(p) == 0 {
+			continue
+		}
+		if idx > end {
+			break
+		}
+		vm.Set(p, params[idx].Data)
+		idx++
+	}
+	for ; idx <= end; idx++ {
+		vm.Set(params[idx].Name, params[idx].Data)
+	}
+}
 
 func init() {
 	for _, _m := range getSpiderModels() {
@@ -53,11 +84,11 @@ func init() {
 			sp.Keyin = KEYIN
 		}
 
-		if m.Namespace != "" {
+		if m.Namespace != nil && !m.Namespace.IsEmpty() {
 			sp.Namespace = func(self *Spider) string {
 				vm := otto.New()
-				vm.Set("self", self)
-				val, err := vm.Eval(m.Namespace)
+				m.Namespace.SetParams(vm, &FuncParam{Name: `self`, Data: self})
+				val, err := vm.Eval(m.Namespace.Script)
 				if err != nil {
 					logs.Log.Error(" *     动态规则  [Namespace]: %v\n", err)
 				}
@@ -66,12 +97,11 @@ func init() {
 			}
 		}
 
-		if m.SubNamespace != "" {
+		if m.SubNamespace != nil && !m.SubNamespace.IsEmpty() {
 			sp.SubNamespace = func(self *Spider, dataCell map[string]interface{}) string {
 				vm := otto.New()
-				vm.Set("self", self)
-				vm.Set("dataCell", dataCell)
-				val, err := vm.Eval(m.SubNamespace)
+				m.SubNamespace.SetParams(vm, &FuncParam{Name: `self`, Data: self}, &FuncParam{Name: `dataCell`, Data: dataCell})
+				val, err := vm.Eval(m.SubNamespace.Script)
 				if err != nil {
 					logs.Log.Error(" *     动态规则  [SubNamespace]: %v\n", err)
 				}
@@ -82,8 +112,8 @@ func init() {
 
 		sp.RuleTree.Root = func(ctx *Context) {
 			vm := otto.New()
-			vm.Set("ctx", ctx)
-			_, err := vm.Eval(m.Root)
+			m.Root.SetParams(vm, &FuncParam{Name: `ctx`, Data: ctx})
+			_, err := vm.Eval(m.Root.Script)
 			if err != nil {
 				logs.Log.Error(" *     动态规则  [Root]: %v\n", err)
 			}
@@ -91,23 +121,22 @@ func init() {
 
 		for _, rule := range m.Trunk {
 			r := new(Rule)
-			r.ParseFunc = func(parse string) func(*Context) {
+			r.ParseFunc = func(fn *Function) func(*Context) {
 				return func(ctx *Context) {
 					vm := otto.New()
-					vm.Set("ctx", ctx)
-					_, err := vm.Eval(parse)
+					fn.SetParams(vm, &FuncParam{Name: `ctx`, Data: ctx})
+					_, err := vm.Eval(fn.Script)
 					if err != nil {
 						logs.Log.Error(" *     动态规则  [ParseFunc]: %v\n", err)
 					}
 				}
 			}(rule.ParseFunc)
 
-			r.AidFunc = func(parse string) func(*Context, map[string]interface{}) interface{} {
+			r.AidFunc = func(fn *Function) func(*Context, map[string]interface{}) interface{} {
 				return func(ctx *Context, aid map[string]interface{}) interface{} {
 					vm := otto.New()
-					vm.Set("ctx", ctx)
-					vm.Set("aid", aid)
-					val, err := vm.Eval(parse)
+					fn.SetParams(vm, &FuncParam{Name: `ctx`, Data: ctx}, &FuncParam{Name: `aid`, Data: aid})
+					val, err := vm.Eval(fn.Script)
 					if err != nil {
 						logs.Log.Error(" *     动态规则  [AidFunc]: %v\n", err)
 					}
@@ -121,22 +150,45 @@ func init() {
 }
 
 func getSpiderModels() (ms []*SpiderModel) {
+	var typeName = `HTML`
 	defer func() {
 		if p := recover(); p != nil {
-			log.Printf("[E] HTML动态规则解析: %v\n", p)
+			log.Printf("[E] %s动态规则解析: %v\n", typeName, p)
 		}
 	}()
-	files, _ := filepath.Glob(path.Join(config.SPIDER_DIR, "*"+config.SPIDER_EXT))
+	files, err := filepath.Glob(filepath.Join(config.SPIDER_DIR, "*"+config.SPIDER_XML_EXT))
+	if err != nil {
+		log.Printf("[E] %v\n", err)
+	}
 	for _, filename := range files {
 		b, err := ioutil.ReadFile(filename)
 		if err != nil {
-			log.Printf("[E] HTML动态规则[%s]: %v\n", filename, err)
+			log.Printf("[E] %s动态规则[%s]: %v\n", typeName, filename, err)
 			continue
 		}
 		var m SpiderModel
 		err = xml.Unmarshal(b, &m)
 		if err != nil {
-			log.Printf("[E] HTML动态规则[%s]: %v\n", filename, err)
+			log.Printf("[E] %s动态规则[%s]: %v\n", typeName, filename, err)
+			continue
+		}
+		ms = append(ms, &m)
+	}
+	typeName = `YAML`
+	files, err = filepath.Glob(filepath.Join(config.SPIDER_DIR, "*"+config.SPIDER_YML_EXT))
+	if err != nil {
+		log.Printf("[E] %v\n", err)
+	}
+	for _, filename := range files {
+		b, err := ioutil.ReadFile(filename)
+		if err != nil {
+			log.Printf("[E] %s动态规则[%s]: %v\n", typeName, filename, err)
+			continue
+		}
+		var m SpiderModel
+		err = confl.Unmarshal(b, &m)
+		if err != nil {
+			log.Printf("[E] %s动态规则[%s]: %v\n", typeName, filename, err)
 			continue
 		}
 		ms = append(ms, &m)
