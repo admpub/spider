@@ -9,6 +9,7 @@ import (
 
 	"github.com/admpub/spider/app/pipeline/collector/data"
 	"github.com/admpub/spider/app/spider"
+	"github.com/admpub/spider/logs"
 	"github.com/admpub/spider/runtime/cache"
 )
 
@@ -26,6 +27,7 @@ type Collector struct {
 	sum         [4]uint64 //收集的数据总数[上次输出后文本总数，本次输出后文本总数，上次输出后文件总数，本次输出后文件总数]，非并发安全
 	dataSumLock sync.RWMutex
 	fileSumLock sync.RWMutex
+	logger      logs.Logs
 }
 
 func NewCollector(sp *spider.Spider) *Collector {
@@ -90,55 +92,58 @@ func (self *Collector) Stop() {
 // 启动数据收集/输出管道
 func (self *Collector) Start() {
 	// 启动输出协程
+	go self.Run()
+}
+
+// 启动数据收集/输出管道
+func (self *Collector) Run() {
+	dataStop := make(chan bool)
+	fileStop := make(chan bool)
+
 	go func() {
-		dataStop := make(chan bool)
-		fileStop := make(chan bool)
+		defer func() {
+			recover()
+		}()
+		for data := range self.DataChan {
+			// 缓存分批数据
+			self.dataDocker = append(self.dataDocker, data)
 
-		go func() {
-			defer func() {
-				recover()
-			}()
-			for data := range self.DataChan {
-				// 缓存分批数据
-				self.dataDocker = append(self.dataDocker, data)
-
-				// 未达到设定的分批量时继续收集数据
-				if len(self.dataDocker) < cache.Task.DockerCap {
-					continue
-				}
-
-				// 执行输出
-				self.dataBatch++
-				self.outputData()
+			// 未达到设定的分批量时继续收集数据
+			if len(self.dataDocker) < cache.Task.DockerCap {
+				continue
 			}
-			// 将剩余收集到但未输出的数据输出
+
+			// 执行输出
 			self.dataBatch++
 			self.outputData()
-			close(dataStop)
-		}()
-
-		go func() {
-			defer func() {
-				recover()
-			}()
-			// 只有当收到退出通知并且通道内无数据时，才退出循环
-			for file := range self.FileChan {
-				atomic.AddUint64(&self.fileBatch, 1)
-				self.wait.Add(1)
-				go self.outputFile(file)
-			}
-			close(fileStop)
-		}()
-
-		<-dataStop
-		<-fileStop
-
-		// 等待所有输出完成
-		self.wait.Wait()
-
-		// 返回报告
-		self.Report()
+		}
+		// 将剩余收集到但未输出的数据输出
+		self.dataBatch++
+		self.outputData()
+		close(dataStop)
 	}()
+
+	go func() {
+		defer func() {
+			recover()
+		}()
+		// 只有当收到退出通知并且通道内无数据时，才退出循环
+		for file := range self.FileChan {
+			atomic.AddUint64(&self.fileBatch, 1)
+			self.wait.Add(1)
+			go self.outputFile(file)
+		}
+		close(fileStop)
+	}()
+
+	<-dataStop
+	<-fileStop
+
+	// 等待所有输出完成
+	self.wait.Wait()
+
+	// 返回报告
+	self.Report()
 }
 
 func (self *Collector) resetDataDocker() {
@@ -209,4 +214,15 @@ func (self *Collector) Report() {
 		// FileSize: self.fileSize(),
 		Time: time.Since(cache.StartTime),
 	}
+}
+
+func (self *Collector) Logger() logs.Logs {
+	if self.logger == nil {
+		return logs.Log
+	}
+	return self.logger
+}
+
+func (self *Collector) SetLogger(logger logs.Logs) {
+	self.logger = logger
 }

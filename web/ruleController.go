@@ -5,6 +5,8 @@ import (
 
 	"github.com/admpub/spider/app"
 	"github.com/admpub/spider/app/crawler"
+	"github.com/admpub/spider/logs"
+	"github.com/admpub/spider/runtime/cache"
 )
 
 var ruleController = &RuleController{}
@@ -21,10 +23,17 @@ func (r *RuleController) Testing(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(`没有找到规则：` + name))
 		return
 	}
+
+	cache.Task.SuccessInherit = false
+	cache.Task.FailureInherit = false
+
 	c := crawler.New(0)
 	_spider.OutType = `testing`
 	_spider.Writer = w
 	_spider.Limit = 1
-	c.Init(_spider).Run()
+	logger := logs.NewLog()
+	logger.BeeLogger.Async(false)
+	logger.SetOutput(Lsc)
+	c.Init(_spider, logger).Run()
 	w.Write([]byte(`Hello:` + name))
 }

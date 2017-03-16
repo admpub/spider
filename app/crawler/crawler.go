@@ -17,11 +17,11 @@ import (
 // 采集引擎
 type (
 	Crawler interface {
-		Init(*spider.Spider) Crawler //初始化采集引擎
-		Run()                        //运行任务
-		Stop()                       //主动终止
-		CanStop() bool               //能否终止
-		GetId() int                  //获取引擎ID
+		Init(*spider.Spider, ...logs.Logs) Crawler //初始化采集引擎
+		Run()                                      //运行任务
+		Stop()                                     //主动终止
+		CanStop() bool                             //能否终止
+		GetId() int                                //获取引擎ID
 	}
 	crawler struct {
 		*spider.Spider                 //执行的采集规则
@@ -39,9 +39,12 @@ func New(id int) Crawler {
 	}
 }
 
-func (self *crawler) Init(sp *spider.Spider) Crawler {
+func (self *crawler) Init(sp *spider.Spider, logger ...logs.Logs) Crawler {
 	self.Spider = sp.ReqmatrixInit()
 	self.Pipeline = pipeline.New(sp)
+	if len(logger) > 0 {
+		self.Pipeline.SetLogger(logger[0])
+	}
 	self.pause[0] = sp.Pausetime / 2
 	if self.pause[0] > 0 {
 		self.pause[1] = self.pause[0] * 3
@@ -51,12 +54,18 @@ func (self *crawler) Init(sp *spider.Spider) Crawler {
 	return self
 }
 
+func (self *crawler) Logger() logs.Logs {
+	return self.Pipeline.Logger()
+}
+
 // 任务执行入口
 func (self *crawler) Run() {
 	// 预先启动数据收集/输出管道
+	self.Logger().Debug(` *     Crawler：启动数据收集/输出管道`)
 	self.Pipeline.Start()
 
 	// 运行处理协程
+	self.Logger().Debug(` *     Crawler：运行处理协程`)
 	c := make(chan bool)
 	go func() {
 		self.run()
@@ -64,11 +73,14 @@ func (self *crawler) Run() {
 	}()
 
 	// 启动任务
+	self.Logger().Debug(` *     Crawler：启动Spider任务`)
 	self.Spider.Start()
 
+	self.Logger().Debug(` *     Crawler：等待处理协程退出`)
 	<-c // 等待处理协程退出
 
 	// 停止数据收集/输出管道
+	self.Logger().Debug(` *     Crawler：停止数据收集/输出管道`)
 	self.Pipeline.Stop()
 }
 
@@ -98,7 +110,7 @@ func (self *crawler) run() {
 			defer func() {
 				self.FreeOne()
 			}()
-			logs.Log.Debug(" *     Start: %v", req.GetUrl())
+			self.Logger().Debug(" *     Start: %v", req.GetUrl())
 			self.Process(req)
 		}(req)
 
@@ -137,7 +149,7 @@ func (self *crawler) Process(req *request.Request) {
 				stack = stack[:end]
 			}
 			stack = bytes.Replace(stack, []byte("\n"), []byte("\r\n"), -1)
-			logs.Log.Error(" *     Panic  [process][%s]: %s\r\n[TRACE]\r\n%s", downUrl, p, stack)
+			self.Logger().Error(" *     Panic  [process][%s]: %s\r\n[TRACE]\r\n%s", downUrl, p, stack)
 		}
 	}()
 
@@ -149,7 +161,7 @@ func (self *crawler) Process(req *request.Request) {
 			cache.PageFailCount()
 		}
 		// 提示错误
-		logs.Log.Error(" *     Fail  [download][%v]: %v\n", downUrl, err)
+		self.Logger().Error(" *     Fail  [download][%v]: %v\n", downUrl, err)
 		return
 	}
 
@@ -176,7 +188,7 @@ func (self *crawler) Process(req *request.Request) {
 	cache.PageSuccCount()
 
 	// 提示抓取成功
-	logs.Log.Informational(" *     Success: %v\n", downUrl)
+	self.Logger().Informational(" *     Success: %v\n", downUrl)
 
 	// 释放ctx准备复用
 	spider.PutContext(ctx)

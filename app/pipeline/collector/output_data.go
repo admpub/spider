@@ -1,9 +1,5 @@
 package collector
 
-import (
-	"github.com/admpub/spider/logs"
-)
-
 var (
 	// 全局支持的输出方式
 	DataOutput = make(map[string]func(self *Collector) error)
@@ -27,8 +23,8 @@ func (self *Collector) outputData() {
 
 	defer func() {
 		if p := recover(); p != nil {
-			logs.Log.Informational(" * ")
-			logs.Log.App(" *     Panic  [数据输出：%v | KEYIN：%v | 批次：%v]   数据 %v 条！ [ERROR]  %v\n",
+			self.Logger().Informational(" * ")
+			self.Logger().App(" *     Panic  [数据输出：%v | KEYIN：%v | 批次：%v]   数据 %v 条！ [ERROR]  %v\n",
 				self.Spider.GetName(), self.Spider.GetKeyin(), self.dataBatch, dataLen, p)
 		}
 	}()
@@ -39,12 +35,12 @@ func (self *Collector) outputData() {
 	// 执行输出
 	err := DataOutput[self.outType](self)
 
-	logs.Log.Informational(" * ")
+	self.Logger().Informational(" * ")
 	if err != nil {
-		logs.Log.App(" *     Fail  [数据输出：%v | KEYIN：%v | 批次：%v]   数据 %v 条！ [ERROR]  %v\n",
+		self.Logger().App(" *     Fail  [数据输出：%v | KEYIN：%v | 批次：%v]   数据 %v 条！ [ERROR]  %v\n",
 			self.Spider.GetName(), self.Spider.GetKeyin(), self.dataBatch, dataLen, err)
 	} else {
-		logs.Log.App(" *     [数据输出：%v | KEYIN：%v | 批次：%v]   数据 %v 条！\n",
+		self.Logger().App(" *     [数据输出：%v | KEYIN：%v | 批次：%v]   数据 %v 条！\n",
 			self.Spider.GetName(), self.Spider.GetKeyin(), self.dataBatch, dataLen)
 		self.Spider.TryFlushSuccess()
 	}

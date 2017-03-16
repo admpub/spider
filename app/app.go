@@ -174,20 +174,20 @@ func (self *Logic) Init(mode int, port int, master string, w ...io.Writer) App {
 	switch self.AppConf.Mode {
 	case status.SERVER:
 		if self.checkPort() {
-			logs.Log.Informational("                                                                                               ！！当前运行模式为：[ 服务器 ] 模式！！")
+			logs.Log.Informational("       ══ 当前运行模式为：[ 服务器 ] 模式 ══")
 			self.Teleport.SetAPI(distribute.MasterApi(self)).Server(":" + strconv.Itoa(self.AppConf.Port))
 		}
 
 	case status.CLIENT:
 		if self.checkAll() {
-			logs.Log.Informational("                                                                                               ！！当前运行模式为：[ 客户端 ] 模式！！")
+			logs.Log.Informational("       ══ 当前运行模式为：[ 客户端 ] 模式 ══")
 			self.Teleport.SetAPI(distribute.SlaveApi(self)).Client(self.AppConf.Master, ":"+strconv.Itoa(self.AppConf.Port))
 			// 开启节点间log打印
 			self.canSocketLog = true
 			go self.socketLog()
 		}
 	case status.OFFLINE:
-		logs.Log.Informational("                                                                                               ！！当前运行模式为：[ 单机 ] 模式！！")
+		logs.Log.Informational("       ══ 当前运行模式为：[ 单机 ] 模式 ══")
 		return self
 	default:
 		logs.Log.Warning(" *    ——请指定正确的运行模式！——")
@@ -390,7 +390,7 @@ func (self *Logic) server() {
 	logs.Log.Informational(" * ")
 	logs.Log.Informational(` *********************************************************************************************************************************** `)
 	logs.Log.Informational(" * ")
-	logs.Log.Informational(" *                               —— 本次成功添加 %v 条任务，共包含 %v 条采集规则 ——", tasksNum, spidersNum)
+	logs.Log.Informational(" *     —— 本次成功添加 %v 条任务，共包含 %v 条采集规则 ——", tasksNum, spidersNum)
 	logs.Log.Informational(" * ")
 	logs.Log.Informational(` *********************************************************************************************************************************** `)
 }
@@ -525,7 +525,7 @@ func (self *Logic) exec() {
 	logs.Log.Informational(" *     采集引擎池容量为 %v\n", crawlerCap)
 	logs.Log.Informational(" *     并发协程最多 %v 个\n", self.AppConf.ThreadNum)
 	logs.Log.Informational(" *     默认随机停顿 %v~%v 毫秒\n", self.AppConf.Pausetime/2, self.AppConf.Pausetime*2)
-	logs.Log.App(" *                                                                                                 —— 开始抓取，请耐心等候 ——")
+	logs.Log.App(" *     —— 开始抓取，请耐心等候 ——")
 	logs.Log.Informational(` *********************************************************************************************************************************** `)
 
 	// 开始计时
@@ -604,16 +604,16 @@ func (self *Logic) goRun(count int) {
 	logs.Log.Informational(" * ")
 	switch {
 	case self.sum[0] > 0 && self.sum[1] == 0:
-		logs.Log.App(" *                            —— %s合计采集【数据 %v 条】， 实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
+		logs.Log.App(" *     —— %s合计采集【数据 %v 条】， 实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
 			prefix, self.sum[0], cache.GetPageCount(1), cache.GetPageCount(-1), cache.GetPageCount(0), self.takeTime)
 	case self.sum[0] == 0 && self.sum[1] > 0:
-		logs.Log.App(" *                            —— %s合计采集【文件 %v 个】， 实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
+		logs.Log.App(" *     —— %s合计采集【文件 %v 个】， 实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
 			prefix, self.sum[1], cache.GetPageCount(1), cache.GetPageCount(-1), cache.GetPageCount(0), self.takeTime)
 	case self.sum[0] == 0 && self.sum[1] == 0:
-		logs.Log.App(" *                            —— %s无采集结果，实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
+		logs.Log.App(" *     —— %s无采集结果，实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
 			prefix, cache.GetPageCount(1), cache.GetPageCount(-1), cache.GetPageCount(0), self.takeTime)
 	default:
-		logs.Log.App(" *                            —— %s合计采集【数据 %v 条 + 文件 %v 个】，实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
+		logs.Log.App(" *     —— %s合计采集【数据 %v 条 + 文件 %v 个】，实爬【成功 %v URL + 失败 %v URL = 合计 %v URL】，耗时【%v】 ——",
 			prefix, self.sum[0], self.sum[1], cache.GetPageCount(1), cache.GetPageCount(-1), cache.GetPageCount(0), self.takeTime)
 	}
 	logs.Log.Informational(" * ")

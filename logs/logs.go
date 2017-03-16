@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/admpub/spider/config"
 	"github.com/admpub/spider/logs/logs"
@@ -43,20 +43,10 @@ type (
 	}
 )
 
-var Log = func() Logs {
-	p, _ := path.Split(config.LOG)
-	// 不存在目录时创建目录
-	d, err := os.Stat(p)
-	if err != nil || !d.IsDir() {
-		if err := os.MkdirAll(p, 0777); err != nil {
-			// Log.Error("Error: %v\n", err)
-		}
-	}
-
+func NewLog() *mylog {
 	ml := &mylog{
 		BeeLogger: logs.NewLogger(config.LOG_CAP, config.LOG_FEEDBACK_LEVEL),
 	}
-
 	// 是否打印行信息
 	ml.BeeLogger.EnableFuncCallDepth(config.LOG_LINEINFO)
 	// 全局日志打印级别（亦是日志文件输出级别）
@@ -67,6 +57,20 @@ var Log = func() Logs {
 	ml.BeeLogger.SetLogger("console", map[string]interface{}{
 		"level": config.LOG_CONSOLE_LEVEL,
 	})
+	return ml
+}
+
+var Log = func() Logs {
+	p, _ := filepath.Split(config.LOG)
+	// 不存在目录时创建目录
+	d, err := os.Stat(p)
+	if err != nil || !d.IsDir() {
+		if err := os.MkdirAll(p, 0777); err != nil {
+			// Log.Error("Error: %v\n", err)
+		}
+	}
+
+	ml := NewLog()
 
 	// 是否保存所有日志到本地文件
 	if config.LOG_SAVE {

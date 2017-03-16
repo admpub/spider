@@ -146,7 +146,6 @@ func wsHandle(conn *ws.Conn) {
 			// logs.Log.Debug("websocket接收出错断开 (%v) !", err)
 			return
 		}
-
 		// log.Log.Debug("Received from web: %v", req)
 		wsApi[util.Atoa(req["operate"])](sessID, req)
 	}
