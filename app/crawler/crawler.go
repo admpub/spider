@@ -62,7 +62,11 @@ func (self *crawler) Logger() logs.Logs {
 func (self *crawler) Run() {
 	// 预先启动数据收集/输出管道
 	self.Logger().Debug(` *     Crawler：启动数据收集/输出管道`)
-	self.Pipeline.Start()
+	p := make(chan bool)
+	go func() {
+		self.Pipeline.Run()
+		close(p)
+	}()
 
 	// 运行处理协程
 	self.Logger().Debug(` *     Crawler：运行处理协程`)
@@ -78,6 +82,10 @@ func (self *crawler) Run() {
 
 	self.Logger().Debug(` *     Crawler：等待处理协程退出`)
 	<-c // 等待处理协程退出
+
+	if self.Spider.DisableAsync {
+		<-p
+	}
 
 	// 停止数据收集/输出管道
 	self.Logger().Debug(` *     Crawler：停止数据收集/输出管道`)

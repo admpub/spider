@@ -669,6 +669,7 @@ func (self *Logic) setAppConf(task *distribute.Task) {
 	self.AppConf.ProxyMinute = task.ProxyMinute
 	self.AppConf.Keyins = task.Keyins
 }
+
 func (self *Logic) setTask(task *distribute.Task) {
 	task.ThreadNum = self.AppConf.ThreadNum
 	task.Pausetime = self.AppConf.Pausetime

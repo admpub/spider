@@ -134,6 +134,7 @@ h1 {
 }
 
 #log-box {
+    font-family: 'Courier New', 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     height: 100%;
     overflow-y: auto;
 }

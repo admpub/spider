@@ -168,7 +168,7 @@ function home() {
     Open('refresh');
 }
 
-// 按模式启动Pholcus
+// 按模式启动spider
 function Open(operate) {
     $("#init").text(" 开  启 …").css({
         "background-color": "#286090",
@@ -194,6 +194,25 @@ function Close() {
 }
 
 // 开始或停止运行任务
+function testing(obj) {
+    var rowId=$(obj).data('row-id');
+    var name=$('#spider-name-'+rowId).html();
+    ws.onsend({
+        'operate': 'testing',
+        'spiders': [name],
+        'Keyins': document.spiderForm.elements['Keyins'].value,
+        'ThreadNum': 1,
+        'Limit': 1,
+        'DockerCap': 1,
+        'Pausetime': 0,
+        'ProxyMinute': 0,
+        'OutType': 'testing',
+        'SuccessInherit': false,
+        'FailureInherit': false,
+    });
+};
+
+// 开始或停止运行任务
 function runStop() {
     if ($("#btn-run").attr("data-type") == 'run') {
         ws.onsend(getForm());
@@ -212,15 +231,15 @@ function getForm() {
     return {
         'operate': 'run',
         'spiders': getSpiders(),
-        'Keyins': document.pholcus.elements['Keyins'].value,
-        'ThreadNum': document.pholcus.elements['ThreadNum'].value,
-        'Limit': document.pholcus.elements['Limit'].value,
-        'DockerCap': document.pholcus.elements['DockerCap'].value,
-        'Pausetime': document.pholcus.elements['Pausetime'].value,
-        'ProxyMinute': document.pholcus.elements['ProxyMinute'].value,
-        'OutType': document.pholcus.elements['OutType'].value,
-        'SuccessInherit': document.pholcus.elements['SuccessInherit'].value,
-        'FailureInherit': document.pholcus.elements['FailureInherit'].value,
+        'Keyins': document.spiderForm.elements['Keyins'].value,
+        'ThreadNum': document.spiderForm.elements['ThreadNum'].value,
+        'Limit': document.spiderForm.elements['Limit'].value,
+        'DockerCap': document.spiderForm.elements['DockerCap'].value,
+        'Pausetime': document.spiderForm.elements['Pausetime'].value,
+        'ProxyMinute': document.spiderForm.elements['ProxyMinute'].value,
+        'OutType': document.spiderForm.elements['OutType'].value,
+        'SuccessInherit': document.spiderForm.elements['SuccessInherit'].value,
+        'FailureInherit': document.spiderForm.elements['FailureInherit'].value,
     }
 }
 
@@ -262,7 +281,7 @@ wslog.onmessage = function(m) {
     if (items.length == 0) {
         var div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = '<p class="message">' + m.data.replace(/\s/g, '&nbsp;') + '</p>';
+        div.innerHTML = '<p class="message">' + m.data.replace(/ /g, '&nbsp;') + '</p>';
         box.appendChild(div);
         return;
     };
@@ -271,7 +290,7 @@ wslog.onmessage = function(m) {
     if (len > 0 && len < 1000) {
         var p = document.createElement("p");
         p.className = "message";
-        p.innerHTML = m.data.replace(/\s/g, '&nbsp;');
+        p.innerHTML = m.data.replace(/ /g, '&nbsp;');
         item.appendChild(p);
     }else{
         if (items.length >= 2) {
@@ -279,7 +298,7 @@ wslog.onmessage = function(m) {
         };
         var div = document.createElement("div");
         div.className = "item";
-        div.innerHTML = '<p class="message">' + m.data.replace(/\s/g, '&nbsp;') + '</p>';
+        div.innerHTML = '<p class="message">' + m.data.replace(/ /g, '&nbsp;') + '</p>';
         box.appendChild(div);
     };
     

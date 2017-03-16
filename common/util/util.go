@@ -379,23 +379,44 @@ func Atoa(str interface{}) string {
 	if str == nil {
 		return ""
 	}
-	return strings.Trim(str.(string), " ")
+	switch v := str.(type) {
+	case string:
+		return strings.Trim(v, " ")
+	default:
+		return fmt.Sprint(v)
+	}
 }
 
 func Atoi(str interface{}) int {
 	if str == nil {
 		return 0
 	}
-	i, _ := strconv.Atoi(strings.Trim(str.(string), " "))
-	return i
+	switch v := str.(type) {
+	case string:
+		i, _ := strconv.Atoi(strings.Trim(v, " "))
+		return i
+	case int:
+		return v
+	default:
+		i, _ := strconv.Atoi(fmt.Sprint(v))
+		return i
+	}
 }
 
 func Atoui(str interface{}) uint {
 	if str == nil {
 		return 0
 	}
-	u, _ := strconv.Atoi(strings.Trim(str.(string), " "))
-	return uint(u)
+	switch v := str.(type) {
+	case string:
+		u, _ := strconv.Atoi(strings.Trim(v, " "))
+		return uint(u)
+	case uint:
+		return v
+	default:
+		i, _ := strconv.Atoi(fmt.Sprint(v))
+		return uint(i)
+	}
 }
 
 // RandomCreateBytes generate random []byte by specify chars.

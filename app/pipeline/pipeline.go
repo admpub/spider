@@ -10,9 +10,9 @@ import (
 
 // 数据收集/输出管道
 type Pipeline interface {
-	Run()                            //执行
-	Start()                          //启动(异步执行)
-	Stop()                           //停止(异步执行)
+	Run()                            //启动(阻塞)
+	Start()                          //启动
+	Stop()                           //停止
 	CollectData(data.DataCell) error //收集数据单元
 	CollectFile(data.FileCell) error //收集文件
 	Logger() logs.Logs

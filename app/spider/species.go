@@ -55,5 +55,6 @@ func (self *SpiderSpecies) Get() []*Spider {
 }
 
 func (self *SpiderSpecies) GetByName(name string) *Spider {
-	return self.hash[name]
+	s, _ := self.hash[name]
+	return s
 }

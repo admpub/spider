@@ -2,7 +2,7 @@ var Html = function(info) {
     if (info.mode == client) {
         return logBoxHtml(client);
     };
-    return '<div class="step2"><form role="form" id="js-form" name="pholcus" onsubmit="return runStop();" method="POST" enctype="multipart/form-data">\
+    return '<div class="step2"><form role="form" id="js-form" name="spiderForm" onsubmit="return runStop();" method="POST" enctype="multipart/form-data">\
             <div class="box form-1">\
               <!--<div class="box-header"><h3 class="box-title">All Spiders</h3></div>-->\
               <div class="box-body table-responsive no-padding" id="spider-box">\
@@ -58,9 +58,9 @@ var spidersHtml = function(spiders) {
                   </label>\
                 </div>\
             </td>\
-            <td><a class="btn btn-success btn-xs" href="/rule/testing?name=' + spiders.menu[i].name + '" target="_blank">测试</a></td>\
+            <td><a class="btn btn-success btn-xs" href="javascript:;" data-row-id="' + i + '" onclick="testing(this)" target="_blank">测试</a></td>\
             <td><label for="spider-' + i + '">' + i + '</label></td>\
-            <td><label for="spider-' + i + '">' + spiders.menu[i].name + '</label></td>\
+            <td><label for="spider-' + i + '" id="spider-name-' + i + '">' + spiders.menu[i].name + '</label></td>\
             <td><label for="spider-' + i + '">' + spiders.menu[i].description + '</label></td>\
         <tr>'
     }

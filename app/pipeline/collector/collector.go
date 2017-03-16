@@ -28,6 +28,7 @@ type Collector struct {
 	dataSumLock sync.RWMutex
 	fileSumLock sync.RWMutex
 	logger      logs.Logs
+	dockerCap   int
 }
 
 func NewCollector(sp *spider.Spider) *Collector {
@@ -38,12 +39,17 @@ func NewCollector(sp *spider.Spider) *Collector {
 	} else {
 		self.outType = cache.Task.OutType
 	}
-	if cache.Task.DockerCap < 1 {
-		cache.Task.DockerCap = 1
+	if sp.DockerCap > 0 {
+		self.dockerCap = sp.DockerCap
+	} else {
+		if cache.Task.DockerCap < 1 {
+			cache.Task.DockerCap = 1
+		}
+		self.dockerCap = cache.Task.DockerCap
 	}
-	self.DataChan = make(chan data.DataCell, cache.Task.DockerCap)
-	self.FileChan = make(chan data.FileCell, cache.Task.DockerCap)
-	self.dataDocker = make([]data.DataCell, 0, cache.Task.DockerCap)
+	self.DataChan = make(chan data.DataCell, self.dockerCap)
+	self.FileChan = make(chan data.FileCell, self.dockerCap)
+	self.dataDocker = make([]data.DataCell, 0, self.dockerCap)
 	self.sum = [4]uint64{}
 	// self.size = [2]uint64{}
 	self.dataBatch = 0
@@ -108,8 +114,13 @@ func (self *Collector) Run() {
 			// 缓存分批数据
 			self.dataDocker = append(self.dataDocker, data)
 
+			n := len(self.dataDocker)
+			if self.Spider.DataLimit > 0 && n > self.Spider.DataLimit {
+				break
+			}
+
 			// 未达到设定的分批量时继续收集数据
-			if len(self.dataDocker) < cache.Task.DockerCap {
+			if n < self.dockerCap {
 				continue
 			}
 
@@ -129,6 +140,9 @@ func (self *Collector) Run() {
 		}()
 		// 只有当收到退出通知并且通道内无数据时，才退出循环
 		for file := range self.FileChan {
+			if self.Spider.DataLimit > 0 && self.fileBatch > uint64(self.Spider.DataLimit) {
+				break
+			}
 			atomic.AddUint64(&self.fileBatch, 1)
 			self.wait.Add(1)
 			go self.outputFile(file)

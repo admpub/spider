@@ -1,7 +1,6 @@
 package spider
 
 import (
-	"io"
 	"math"
 	"sync"
 	"time"
@@ -26,7 +25,7 @@ type (
 		Name            string                                                     // 用户界面显示的名称（应保证唯一性）
 		Description     string                                                     // 用户界面显示的描述
 		Pausetime       int64                                                      // 随机暂停区间(50%~200%)，若规则中直接定义，则不被界面传参覆盖
-		Limit           int64                                                      // 默认限制请求数，0为不限；若规则中定义为LIMIT，则采用规则的自定义限制方案
+		Limit           int64                                                      // 默认限制请求数，0为不限；<0时，限制总请求数；>0则采用规则的自定义限制方案
 		Keyin           string                                                     // 自定义输入的配置信息，使用前须在规则中设置初始值为KEYIN
 		EnableCookie    bool                                                       // 所有请求是否使用cookie记录
 		NotDefaultField bool                                                       // 是否禁止输出结果中的默认字段 Url/ParentUrl/DownloadTime
@@ -34,7 +33,9 @@ type (
 		SubNamespace    func(self *Spider, dataCell map[string]interface{}) string // 次级命名，用于输出文件、路径的命名，可依赖具体数据内容
 		RuleTree        *RuleTree                                                  // 定义具体的采集规则树
 		OutType         string                                                     //数据输出类型(针对某一个采集规则)
-		Writer          io.Writer                                                  //测试时，获取输出结果
+		DisableAsync    bool                                                       //禁用异步
+		DataLimit       int                                                        //数据限制：最多采集多少条数据，≤0时代表不限制
+		DockerCap       int                                                        //分批输出限制：大于0时有效
 
 		// 以下字段系统自动赋值
 		id        int               // 自动分配的SpiderQueue中的索引
@@ -167,7 +168,7 @@ func (self *Spider) GetLimit() int64 {
 
 // 设置采集上限
 // <0 表示采用限制请求数的方案
-// >0 表示采用规则中的自定义限制方案
+// >0 表示不限制(可以自己在规则中限制)
 func (self *Spider) SetLimit(max int64) {
 	self.Limit = max
 }

@@ -3,6 +3,8 @@ package web
 import (
 	"sync"
 
+	"fmt"
+
 	"github.com/admpub/spider/app"
 	"github.com/admpub/spider/app/spider"
 	"github.com/admpub/spider/common/util"
@@ -147,7 +149,13 @@ func wsHandle(conn *ws.Conn) {
 			return
 		}
 		// log.Log.Debug("Received from web: %v", req)
-		wsApi[util.Atoa(req["operate"])](sessID, req)
+		operate := util.Atoa(req["operate"])
+		op, ok := wsApi[operate]
+		if !ok {
+			logs.Log.Error(`Invalid operate: %v`, operate)
+			return
+		}
+		op(sessID, req)
 	}
 }
 
@@ -190,6 +198,26 @@ func init() {
 
 		go func() {
 			app.LogicApp.Run()
+			if app.LogicApp.GetAppConf("mode").(int) == status.OFFLINE {
+				Sc.Write(sessID, map[string]interface{}{"operate": "stop"})
+			}
+		}()
+	}
+
+	wsApi["testing"] = func(sessID string, req map[string]interface{}) {
+		setAppConf(req)
+
+		if app.LogicApp.GetAppConf("mode").(int) == status.OFFLINE {
+			Sc.Write(sessID, map[string]interface{}{"operate": "run"})
+		}
+
+		go func() {
+			spiders := getSpiderNames(req)
+			if len(spiders) > 0 {
+				app.RunCrawler(spiders[0], Lsc, func(_spider *spider.Spider) {
+					_spider.OutType = `testing`
+				})
+			}
 			if app.LogicApp.GetAppConf("mode").(int) == status.OFFLINE {
 				Sc.Write(sessID, map[string]interface{}{"operate": "stop"})
 			}
@@ -310,6 +338,11 @@ func tplData(mode int) map[string]interface{} {
 
 // 配置运行参数
 func setConf(req map[string]interface{}) {
+	setAppConf(req)
+	setSpiderQueue(req)
+}
+
+func setAppConf(req map[string]interface{}) {
 	if tn := util.Atoi(req["ThreadNum"]); tn == 0 {
 		app.LogicApp.SetAppConf("ThreadNum", 1)
 	} else {
@@ -325,22 +358,31 @@ func setConf(req map[string]interface{}) {
 		SetAppConf("Keyins", util.Atoa(req["Keyins"])).
 		SetAppConf("SuccessInherit", req["SuccessInherit"] == "true").
 		SetAppConf("FailureInherit", req["FailureInherit"] == "true")
-
-	setSpiderQueue(req)
 }
 
 func setSpiderQueue(req map[string]interface{}) {
-	spNames, ok := req["spiders"].([]interface{})
-	if !ok {
-		return
-	}
 	spiders := []*spider.Spider{}
-	for _, sp := range app.LogicApp.GetSpiderLib() {
-		for _, spName := range spNames {
-			if util.Atoa(spName) == sp.GetName() {
-				spiders = append(spiders, sp.Copy())
-			}
+	for _, spName := range getSpiderNames(req) {
+		name := util.Atoa(spName)
+		if spider := app.LogicApp.GetSpiderByName(name); spider != nil {
+			spiders = append(spiders, spider)
 		}
 	}
 	app.LogicApp.SpiderPrepare(spiders)
+}
+
+func getSpiderNames(req map[string]interface{}) (r []string) {
+	sps, ok := req["spiders"]
+	if !ok {
+		return
+	}
+	spNames, ok := sps.([]interface{})
+	if !ok {
+		return
+	}
+	r = make([]string, len(spNames))
+	for i, v := range spNames {
+		r[i] = fmt.Sprint(v)
+	}
+	return
 }

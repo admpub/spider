@@ -32,8 +32,13 @@ func (self *Collector) outputData() {
 	// 输出统计
 	self.addDataSum(dataLen)
 
+	output, ok := DataOutput[self.outType]
+	if !ok {
+		self.Logger().Error(`Invaid outType: %v`, self.outType)
+		return
+	}
 	// 执行输出
-	err := DataOutput[self.outType](self)
+	err := output(self)
 
 	self.Logger().Informational(" * ")
 	if err != nil {
