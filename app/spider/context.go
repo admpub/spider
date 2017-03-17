@@ -110,7 +110,7 @@ func (self *Context) AddQueue(req *request.Request) *Context {
 	// 若已主动终止任务，则崩溃爬虫协程
 	self.spider.tryPanic()
 
-	if self.spider.DataLimit > 0 && self.ruleCount[req.Rule] > self.spider.DataLimit {
+	if self.spider.DataLimit > 0 && self.ruleCount[req.Rule] >= self.spider.DataLimit {
 		return self
 	}
 
@@ -148,7 +148,7 @@ func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
 	req.Url = u
 	req.Rule, _ = jreq["Rule"].(string)
 
-	if self.spider.DataLimit > 0 && self.ruleCount[req.Rule] > self.spider.DataLimit {
+	if self.spider.DataLimit > 0 && self.ruleCount[req.Rule] >= self.spider.DataLimit {
 		return self
 	}
 
