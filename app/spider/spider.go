@@ -141,8 +141,9 @@ func (self *Spider) GetId() int {
 }
 
 // 设置蜘蛛ID
-func (self *Spider) SetId(id int) {
+func (self *Spider) SetId(id int) *Spider {
 	self.id = id
+	return self
 }
 
 // 获取自定义配置信息
@@ -151,8 +152,9 @@ func (self *Spider) GetKeyin() string {
 }
 
 // 设置自定义配置信息
-func (self *Spider) SetKeyin(keyword string) {
+func (self *Spider) SetKeyin(keyword string) *Spider {
 	self.Keyins = keyword
+	return self
 }
 
 // 获取采集上限
@@ -165,12 +167,14 @@ func (self *Spider) GetLimit() int64 {
 // 设置采集上限
 // <0 表示采用限制请求数的方案
 // >0 表示不限制(可以自己在规则中限制)
-func (self *Spider) SetLimit(max int64) {
+func (self *Spider) SetLimit(max int64) *Spider {
 	self.Limit = max
+	return self
 }
 
-func (self *Spider) SetConf(conf cache.AppConf) {
+func (self *Spider) SetConf(conf cache.AppConf) *Spider {
 	self.AppConf = conf
+	return self
 }
 
 // 控制所有请求是否使用cookie

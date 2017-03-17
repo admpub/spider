@@ -93,7 +93,7 @@ func New() App {
 
 func newLogic() *Logic {
 	return &Logic{
-		AppConf:       cache.Task,
+		AppConf:       cache.Task.Clone(),
 		SpiderSpecies: spider.Species,
 		status:        status.STOPPED,
 		Teleport:      teleport.New(),
@@ -143,8 +143,13 @@ func (self *Logic) SetAppConf(k string, v interface{}) App {
 			logs.Log.Error(fmt.Sprintf("%v", err))
 		}
 	}()
-	if k == "Limit" && v.(int64) <= 0 {
-		v = int64(spider.LIMIT)
+	if k == "Limit" {
+		val := v.(int64)
+		if val <= 0 {
+			v = int64(spider.LIMIT)
+		} else {
+			v = 0 - val
+		}
 	} else if k == "DockerCap" && v.(int) < 1 {
 		v = int(1)
 	}
@@ -224,12 +229,15 @@ func (self *Logic) SpiderPrepare(original []*spider.Spider) App {
 	self.SpiderQueue.Reset()
 	// 遍历任务
 	for _, sp := range original {
-		spcopy := sp.Copy()
+		spcopy := sp.Copy().SetConf(*self.AppConf)
 		spcopy.SetPausetime(self.AppConf.Pausetime)
 		if spcopy.GetLimit() == spider.LIMIT {
 			spcopy.SetLimit(self.AppConf.Limit)
 		} else {
-			spcopy.SetLimit(-1 * self.AppConf.Limit)
+			if self.AppConf.Limit > 0 {
+				self.AppConf.Limit *= -1
+			}
+			spcopy.SetLimit(self.AppConf.Limit)
 		}
 		self.SpiderQueue.Add(spcopy)
 	}
@@ -514,9 +522,9 @@ func (self *Logic) exec() {
 	count := self.SpiderQueue.Len()
 	cache.ResetPageCount()
 	// 刷新输出方式的状态
-	pipeline.RefreshOutput()
+	pipeline.RefreshOutput(self.AppConf.OutType)
 	// 初始化资源队列
-	scheduler.Init()
+	scheduler.Init(self.AppConf)
 
 	// 设置爬虫队列
 	crawlerCap := self.CrawlerPool.Reset(count)
