@@ -76,16 +76,16 @@ func init() {
 		var sp = &Spider{
 			Name:            m.Name,
 			Description:     m.Description,
-			Pausetime:       m.Pausetime,
 			EnableCookie:    m.EnableCookie,
 			NotDefaultField: m.NotDefaultField,
 			RuleTree:        &RuleTree{Trunk: map[string]*Rule{}},
 		}
+		sp.Pausetime = m.Pausetime
 		if m.EnableLimit {
 			sp.Limit = LIMIT
 		}
 		if m.EnableKeyin {
-			sp.Keyin = KEYIN
+			sp.Keyins = KEYIN
 		}
 
 		if m.Namespace != nil && !m.Namespace.IsEmpty() {

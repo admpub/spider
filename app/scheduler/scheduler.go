@@ -52,8 +52,8 @@ func Init() {
 }
 
 // 注册资源队列
-func AddMatrix(spiderName, spiderSubName string, maxPage int64) *Matrix {
-	matrix := newMatrix(spiderName, spiderSubName, maxPage)
+func AddMatrix(spiderName, spiderSubName string, config *cache.AppConf) *Matrix {
+	matrix := newMatrix(spiderName, spiderSubName, config)
 	sdl.RLock()
 	defer sdl.RUnlock()
 	sdl.matrices = append(sdl.matrices, matrix)

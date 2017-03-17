@@ -9,6 +9,7 @@ import (
 	"github.com/admpub/spider/app/scheduler"
 	"github.com/admpub/spider/common/util"
 	"github.com/admpub/spider/logs"
+	"github.com/admpub/spider/runtime/cache"
 	"github.com/admpub/spider/runtime/status"
 )
 
@@ -24,17 +25,13 @@ type (
 		// 以下字段由用户定义
 		Name            string                                                     // 用户界面显示的名称（应保证唯一性）
 		Description     string                                                     // 用户界面显示的描述
-		Pausetime       int64                                                      // 随机暂停区间(50%~200%)，若规则中直接定义，则不被界面传参覆盖
-		Limit           int64                                                      // 默认限制请求数，0为不限；<0时，限制总请求数；>0则采用规则的自定义限制方案
-		Keyin           string                                                     // 自定义输入的配置信息，使用前须在规则中设置初始值为KEYIN
 		EnableCookie    bool                                                       // 所有请求是否使用cookie记录
 		NotDefaultField bool                                                       // 是否禁止输出结果中的默认字段 Url/ParentUrl/DownloadTime
 		Namespace       func(self *Spider) string                                  // 命名空间，用于输出文件、路径的命名
 		SubNamespace    func(self *Spider, dataCell map[string]interface{}) string // 次级命名，用于输出文件、路径的命名，可依赖具体数据内容
 		RuleTree        *RuleTree                                                  // 定义具体的采集规则树
-		OutType         string                                                     //数据输出类型(针对某一个采集规则)
 		DataLimit       int                                                        //数据限制：最多采集多少条数据，≤0时代表不限制
-		DockerCap       int                                                        //分批输出限制：大于0时有效
+		cache.AppConf
 
 		// 以下字段系统自动赋值
 		id        int               // 自动分配的SpiderQueue中的索引
@@ -150,12 +147,12 @@ func (self *Spider) SetId(id int) {
 
 // 获取自定义配置信息
 func (self *Spider) GetKeyin() string {
-	return self.Keyin
+	return self.Keyins
 }
 
 // 设置自定义配置信息
 func (self *Spider) SetKeyin(keyword string) {
-	self.Keyin = keyword
+	self.Keyins = keyword
 }
 
 // 获取采集上限
@@ -170,6 +167,10 @@ func (self *Spider) GetLimit() int64 {
 // >0 表示不限制(可以自己在规则中限制)
 func (self *Spider) SetLimit(max int64) {
 	self.Limit = max
+}
+
+func (self *Spider) SetConf(conf cache.AppConf) {
+	self.AppConf = conf
 }
 
 // 控制所有请求是否使用cookie
@@ -225,10 +226,8 @@ func (self *Spider) Copy() *Spider {
 	}
 
 	ghost.Description = self.Description
-	ghost.Pausetime = self.Pausetime
 	ghost.EnableCookie = self.EnableCookie
-	ghost.Limit = self.Limit
-	ghost.Keyin = self.Keyin
+	ghost.AppConf = self.AppConf
 
 	ghost.NotDefaultField = self.NotDefaultField
 	ghost.Namespace = self.Namespace
@@ -242,10 +241,11 @@ func (self *Spider) Copy() *Spider {
 
 func (self *Spider) ReqmatrixInit() *Spider {
 	if self.Limit < 0 {
-		self.reqMatrix = scheduler.AddMatrix(self.GetName(), self.GetSubName(), self.Limit)
+		self.reqMatrix = scheduler.AddMatrix(self.GetName(), self.GetSubName(), &self.AppConf)
 		self.SetLimit(0)
 	} else {
-		self.reqMatrix = scheduler.AddMatrix(self.GetName(), self.GetSubName(), math.MinInt64)
+		self.SetLimit(math.MinInt64)
+		self.reqMatrix = scheduler.AddMatrix(self.GetName(), self.GetSubName(), &self.AppConf)
 	}
 	return self
 }

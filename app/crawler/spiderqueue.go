@@ -1,7 +1,7 @@
 package crawler
 
 import (
-	. "github.com/admpub/spider/app/spider"
+	"github.com/admpub/spider/app/spider"
 	"github.com/admpub/spider/common/util"
 	"github.com/admpub/spider/logs"
 )
@@ -10,35 +10,35 @@ import (
 type (
 	SpiderQueue interface {
 		Reset() //重置清空队列
-		Add(*Spider)
-		AddAll([]*Spider)
+		Add(*spider.Spider)
+		AddAll([]*spider.Spider)
 		AddKeyins(string) //为队列成员遍历添加Keyin属性，但前提必须是队列成员未被添加过keyin
-		GetByIndex(int) *Spider
-		GetByName(string) *Spider
-		GetAll() []*Spider
+		GetByIndex(int) *spider.Spider
+		GetByName(string) *spider.Spider
+		GetAll() []*spider.Spider
 		Len() int // 返回队列长度
 	}
 	sq struct {
-		list []*Spider
+		list []*spider.Spider
 	}
 )
 
 func NewSpiderQueue() SpiderQueue {
 	return &sq{
-		list: []*Spider{},
+		list: []*spider.Spider{},
 	}
 }
 
 func (self *sq) Reset() {
-	self.list = []*Spider{}
+	self.list = []*spider.Spider{}
 }
 
-func (self *sq) Add(sp *Spider) {
+func (self *sq) Add(sp *spider.Spider) {
 	sp.SetId(self.Len())
 	self.list = append(self.list, sp)
 }
 
-func (self *sq) AddAll(list []*Spider) {
+func (self *sq) AddAll(list []*spider.Spider) {
 	for _, v := range list {
 		self.Add(v)
 	}
@@ -51,10 +51,10 @@ func (self *sq) AddKeyins(keyins string) {
 		return
 	}
 
-	unit1 := []*Spider{} // 不可被添加自定义配置的蜘蛛
-	unit2 := []*Spider{} // 可被添加自定义配置的蜘蛛
+	unit1 := []*spider.Spider{} // 不可被添加自定义配置的蜘蛛
+	unit2 := []*spider.Spider{} // 可被添加自定义配置的蜘蛛
 	for _, v := range self.GetAll() {
-		if v.GetKeyin() == KEYIN {
+		if v.GetKeyin() == spider.KEYIN {
 			unit2 = append(unit2, v)
 			continue
 		}
@@ -70,7 +70,7 @@ func (self *sq) AddKeyins(keyins string) {
 
 	for _, keyin := range keyinSlice {
 		for _, v := range unit2 {
-			v.Keyin = keyin
+			v.Keyins = keyin
 			nv := *v
 			self.Add((&nv).Copy())
 		}
@@ -82,11 +82,11 @@ func (self *sq) AddKeyins(keyins string) {
 	self.AddAll(unit1)
 }
 
-func (self *sq) GetByIndex(idx int) *Spider {
+func (self *sq) GetByIndex(idx int) *spider.Spider {
 	return self.list[idx]
 }
 
-func (self *sq) GetByName(n string) *Spider {
+func (self *sq) GetByName(n string) *spider.Spider {
 	for _, sp := range self.list {
 		if sp.GetName() == n {
 			return sp
@@ -95,7 +95,7 @@ func (self *sq) GetByName(n string) *Spider {
 	return nil
 }
 
-func (self *sq) GetAll() []*Spider {
+func (self *sq) GetAll() []*spider.Spider {
 	return self.list
 }
 

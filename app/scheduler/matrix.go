@@ -25,22 +25,24 @@ type Matrix struct {
 	failures        map[string]*request.Request // 历史及本次失败请求
 	tempHistoryLock sync.RWMutex
 	failureLock     sync.Mutex
+	config          *cache.AppConf
 	sync.Mutex
 }
 
-func newMatrix(spiderName, spiderSubName string, maxPage int64) *Matrix {
+func newMatrix(spiderName, spiderSubName string, config *cache.AppConf) *Matrix {
 	matrix := &Matrix{
 		spiderName:  spiderName,
-		maxPage:     maxPage,
+		maxPage:     config.Limit,
 		reqs:        make(map[int][]*request.Request),
 		priorities:  []int{},
 		history:     history.New(spiderName, spiderSubName),
 		tempHistory: make(map[string]bool),
 		failures:    make(map[string]*request.Request),
+		config:      config,
 	}
-	if cache.Task.Mode != status.SERVER {
-		matrix.history.ReadSuccess(cache.Task.OutType, cache.Task.SuccessInherit)
-		matrix.history.ReadFailure(cache.Task.OutType, cache.Task.FailureInherit)
+	if config.Mode != status.SERVER {
+		matrix.history.ReadSuccess(config.OutType, config.SuccessInherit)
+		matrix.history.ReadFailure(config.OutType, config.FailureInherit)
 		matrix.setFailures(matrix.history.PullFailure())
 	}
 	return matrix
@@ -212,15 +214,15 @@ func (self *Matrix) CanStop() bool {
 
 // 非服务器模式下保存历史成功记录
 func (self *Matrix) TryFlushSuccess() {
-	if cache.Task.Mode != status.SERVER && cache.Task.SuccessInherit {
-		self.history.FlushSuccess(cache.Task.OutType)
+	if self.config.Mode != status.SERVER && self.config.SuccessInherit {
+		self.history.FlushSuccess(self.config.OutType)
 	}
 }
 
 // 非服务器模式下保存历史失败记录
 func (self *Matrix) TryFlushFailure() {
-	if cache.Task.Mode != status.SERVER && cache.Task.FailureInherit {
-		self.history.FlushFailure(cache.Task.OutType)
+	if self.config.Mode != status.SERVER && self.config.FailureInherit {
+		self.history.FlushFailure(self.config.OutType)
 	}
 }
 
