@@ -1,9 +1,5 @@
 package collector
 
-import (
-	"github.com/admpub/spider/logs"
-)
-
 // 主命名空间相对于数据库名，不依赖具体数据内容，可选
 func (self *Collector) namespace() string {
 	if self.Spider.Namespace == nil {
@@ -22,7 +18,7 @@ func (self *Collector) subNamespace(dataCell map[string]interface{}) string {
 	}
 	defer func() {
 		if p := recover(); p != nil {
-			logs.Log.Error("subNamespace: %v", p)
+			self.Logger().Error("subNamespace: %v", p)
 		}
 	}()
 	return self.Spider.SubNamespace(self.Spider, dataCell)

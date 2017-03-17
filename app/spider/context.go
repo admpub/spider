@@ -22,14 +22,16 @@ import (
 )
 
 type Context struct {
-	spider   *Spider           // 规则
-	Request  *request.Request  // 原始请求
-	Response *http.Response    // 响应流，其中URL拷贝自*request.Request
-	text     []byte            // 下载内容Body的字节流格式
-	dom      *goquery.Document // 下载内容Body为html时，可转换为Dom的对象
-	items    []data.DataCell   // 存放以文本形式输出的结果数据
-	files    []data.FileCell   // 存放欲直接输出的文件("Name": string; "Body": io.ReadCloser)
-	err      error             // 错误标记
+	spider    *Spider           // 规则
+	Request   *request.Request  // 原始请求
+	Response  *http.Response    // 响应流，其中URL拷贝自*request.Request
+	text      []byte            // 下载内容Body的字节流格式
+	dom       *goquery.Document // 下载内容Body为html时，可转换为Dom的对象
+	items     []data.DataCell   // 存放以文本形式输出的结果数据
+	files     []data.FileCell   // 存放欲直接输出的文件("Name": string; "Body": io.ReadCloser)
+	err       error             // 错误标记
+	ruleCount map[string]int    // 统计每个规则的调用次数
+	logger    logs.Logs
 	sync.Mutex
 }
 
@@ -37,8 +39,9 @@ var (
 	contextPool = &sync.Pool{
 		New: func() interface{} {
 			return &Context{
-				items: []data.DataCell{},
-				files: []data.FileCell{},
+				items:     []data.DataCell{},
+				files:     []data.FileCell{},
+				ruleCount: map[string]int{},
 			}
 		},
 	}
@@ -46,22 +49,27 @@ var (
 
 //**************************************** 初始化 *******************************************\\
 
-func GetContext(sp *Spider, req *request.Request) *Context {
+func GetContext(sp *Spider, req *request.Request, logger ...logs.Logs) *Context {
 	ctx := contextPool.Get().(*Context)
 	ctx.spider = sp
 	ctx.Request = req
+	if len(logger) > 0 {
+		ctx.logger = logger[0]
+	}
 	return ctx
 }
 
 func PutContext(ctx *Context) {
 	ctx.items = ctx.items[:0]
 	ctx.files = ctx.files[:0]
+	ctx.ruleCount = map[string]int{}
 	ctx.spider = nil
 	ctx.Request = nil
 	ctx.Response = nil
 	ctx.text = nil
 	ctx.dom = nil
 	ctx.err = nil
+	ctx.logger = nil
 	contextPool.Put(ctx)
 }
 
@@ -73,6 +81,13 @@ func (self *Context) SetResponse(resp *http.Response) *Context {
 // 标记下载错误。
 func (self *Context) SetError(err error) {
 	self.err = err
+}
+
+func (self *Context) Logger() logs.Logs {
+	if self.logger == nil {
+		return logs.Log
+	}
+	return self.logger
 }
 
 //**************************************** Set与Exec类公开方法 *******************************************\\
@@ -91,8 +106,13 @@ func (self *Context) SetError(err error) {
 // Request.DownloaderID指定下载器ID，0为默认的Surf高并发下载器，功能完备，1为PhantomJS下载器，特点破防力强，速度慢，低并发。
 // 默认自动补填Referer。
 func (self *Context) AddQueue(req *request.Request) *Context {
+
 	// 若已主动终止任务，则崩溃爬虫协程
 	self.spider.tryPanic()
+
+	if self.spider.DataLimit > 0 && self.ruleCount[req.Rule] > self.spider.DataLimit {
+		return self
+	}
 
 	err := req.
 		SetSpiderName(self.spider.GetName()).
@@ -100,7 +120,7 @@ func (self *Context) AddQueue(req *request.Request) *Context {
 		Prepare()
 
 	if err != nil {
-		logs.Log.Error(err.Error())
+		self.Logger().Error(err.Error())
 		return self
 	}
 
@@ -110,11 +130,13 @@ func (self *Context) AddQueue(req *request.Request) *Context {
 	}
 
 	self.spider.RequestPush(req)
+	self.ruleCount[req.Rule]++
 	return self
 }
 
 // 用于动态规则添加请求。
 func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
+
 	// 若已主动终止任务，则崩溃爬虫协程
 	self.spider.tryPanic()
 
@@ -125,6 +147,11 @@ func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
 	}
 	req.Url = u
 	req.Rule, _ = jreq["Rule"].(string)
+
+	if self.spider.DataLimit > 0 && self.ruleCount[req.Rule] > self.spider.DataLimit {
+		return self
+	}
+
 	req.Method, _ = jreq["Method"].(string)
 	req.Header = http.Header{}
 	if header, ok := jreq["Header"].(map[string]interface{}); ok {
@@ -169,7 +196,7 @@ func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
 		Prepare()
 
 	if err != nil {
-		logs.Log.Error(err.Error())
+		self.Logger().Error(err.Error())
 		return self
 	}
 
@@ -178,6 +205,7 @@ func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
 	}
 
 	self.spider.RequestPush(req)
+	self.ruleCount[req.Rule]++
 	return self
 }
 
@@ -188,7 +216,7 @@ func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
 func (self *Context) Output(item interface{}, ruleName ...string) {
 	_ruleName, rule, found := self.getRule(ruleName...)
 	if !found {
-		logs.Log.Error("蜘蛛 %s 调用Output()时，指定的规则名不存在！", self.spider.GetName())
+		self.Logger().Error("蜘蛛 %s 调用Output()时，指定的规则名不存在！", self.spider.GetName())
 		return
 	}
 	var _item map[string]interface{}
@@ -258,7 +286,7 @@ func (self *Context) FileOutput(name ...string) {
 func (self *Context) CreatItem(item map[int]interface{}, ruleName ...string) map[string]interface{} {
 	_, rule, found := self.getRule(ruleName...)
 	if !found {
-		logs.Log.Error("蜘蛛 %s 调用CreatItem()时，指定的规则名不存在！", self.spider.GetName())
+		self.Logger().Error("蜘蛛 %s 调用CreatItem()时，指定的规则名不存在！", self.spider.GetName())
 		return nil
 	}
 
@@ -292,7 +320,7 @@ func (self *Context) SetReferer(referer string) *Context {
 func (self *Context) UpsertItemField(field string, ruleName ...string) (index int) {
 	_, rule, found := self.getRule(ruleName...)
 	if !found {
-		logs.Log.Error("蜘蛛 %s 调用UpsertItemField()时，指定的规则名不存在！", self.spider.GetName())
+		self.Logger().Error("蜘蛛 %s 调用UpsertItemField()时，指定的规则名不存在！", self.spider.GetName())
 		return
 	}
 	return self.spider.UpsertItemField(rule, field)
@@ -307,14 +335,14 @@ func (self *Context) Aid(aid map[string]interface{}, ruleName ...string) interfa
 	_, rule, found := self.getRule(ruleName...)
 	if !found {
 		if len(ruleName) > 0 {
-			logs.Log.Error("调用蜘蛛 %s 不存在的规则: %s", self.spider.GetName(), ruleName[0])
+			self.Logger().Error("调用蜘蛛 %s 不存在的规则: %s", self.spider.GetName(), ruleName[0])
 		} else {
-			logs.Log.Error("调用蜘蛛 %s 的Aid()时未指定的规则名", self.spider.GetName())
+			self.Logger().Error("调用蜘蛛 %s 的Aid()时未指定的规则名", self.spider.GetName())
 		}
 		return nil
 	}
 	if rule.AidFunc == nil {
-		logs.Log.Error("蜘蛛 %s 的规则 %s 未定义AidFunc", self.spider.GetName(), ruleName[0])
+		self.Logger().Error("蜘蛛 %s 的规则 %s 未定义AidFunc", self.spider.GetName(), ruleName[0])
 		return nil
 	}
 	return rule.AidFunc(self, aid)
@@ -335,7 +363,7 @@ func (self *Context) Parse(ruleName ...string) *Context {
 		return self
 	}
 	if rule.ParseFunc == nil {
-		logs.Log.Error("蜘蛛 %s 的规则 %s 未定义ParseFunc", self.spider.GetName(), ruleName[0])
+		self.Logger().Error("蜘蛛 %s 的规则 %s 未定义ParseFunc", self.spider.GetName(), ruleName[0])
 		return self
 	}
 	rule.ParseFunc(self)
@@ -426,7 +454,7 @@ func (self *Context) CopyRequest() *request.Request {
 func (self *Context) GetItemFields(ruleName ...string) []string {
 	_, rule, found := self.getRule(ruleName...)
 	if !found {
-		logs.Log.Error("蜘蛛 %s 调用GetItemFields()时，指定的规则名不存在！", self.spider.GetName())
+		self.Logger().Error("蜘蛛 %s 调用GetItemFields()时，指定的规则名不存在！", self.spider.GetName())
 		return nil
 	}
 	return self.spider.GetItemFields(rule)
@@ -437,7 +465,7 @@ func (self *Context) GetItemFields(ruleName ...string) []string {
 func (self *Context) GetItemField(index int, ruleName ...string) (field string) {
 	_, rule, found := self.getRule(ruleName...)
 	if !found {
-		logs.Log.Error("蜘蛛 %s 调用GetItemField()时，指定的规则名不存在！", self.spider.GetName())
+		self.Logger().Error("蜘蛛 %s 调用GetItemField()时，指定的规则名不存在！", self.spider.GetName())
 		return
 	}
 	return self.spider.GetItemField(rule, index)
@@ -448,7 +476,7 @@ func (self *Context) GetItemField(index int, ruleName ...string) (field string) 
 func (self *Context) GetItemFieldIndex(field string, ruleName ...string) (index int) {
 	_, rule, found := self.getRule(ruleName...)
 	if !found {
-		logs.Log.Error("蜘蛛 %s 调用GetItemField()时，指定的规则名不存在！", self.spider.GetName())
+		self.Logger().Error("蜘蛛 %s 调用GetItemField()时，指定的规则名不存在！", self.spider.GetName())
 		return
 	}
 	return self.spider.GetItemFieldIndex(rule, field)
@@ -642,10 +670,10 @@ func (self *Context) initText() {
 					self.Response.Body.Close()
 					return
 				} else {
-					logs.Log.Warning(" *     [convert][%v]: %v (ignore transcoding)\n", self.GetUrl(), err)
+					self.Logger().Warning(" *     [convert][%v]: %v (ignore transcoding)\n", self.GetUrl(), err)
 				}
 			} else {
-				logs.Log.Warning(" *     [convert][%v]: %v (ignore transcoding)\n", self.GetUrl(), err)
+				self.Logger().Warning(" *     [convert][%v]: %v (ignore transcoding)\n", self.GetUrl(), err)
 			}
 		}
 	}

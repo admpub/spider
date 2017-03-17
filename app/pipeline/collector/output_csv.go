@@ -7,7 +7,6 @@ import (
 
 	"github.com/admpub/spider/common/util"
 	"github.com/admpub/spider/config"
-	"github.com/admpub/spider/logs"
 	"github.com/admpub/spider/runtime/cache"
 )
 
@@ -33,7 +32,7 @@ func init() {
 				f, err := os.Stat(folder)
 				if err != nil || !f.IsDir() {
 					if err := os.MkdirAll(folder, 0777); err != nil {
-						logs.Log.Error("Error: %v\n", err)
+						self.Logger().Error("Error: %v\n", err)
 					}
 				}
 
@@ -41,7 +40,7 @@ func init() {
 				file, err := os.Create(filename)
 
 				if err != nil {
-					logs.Log.Error("%v", err)
+					self.Logger().Error("%v", err)
 					continue
 				}
 

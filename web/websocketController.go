@@ -216,6 +216,8 @@ func init() {
 			if len(spiders) > 0 {
 				app.RunCrawler(spiders[0], Lsc, func(_spider *spider.Spider) {
 					_spider.OutType = `testing`
+					_spider.DataLimit = 1
+					_spider.DockerCap = 1
 				})
 			}
 			if app.LogicApp.GetAppConf("mode").(int) == status.OFFLINE {

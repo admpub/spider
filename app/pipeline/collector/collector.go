@@ -114,16 +114,10 @@ func (self *Collector) Run() {
 			// 缓存分批数据
 			self.dataDocker = append(self.dataDocker, data)
 
-			n := len(self.dataDocker)
-			if self.Spider.DataLimit > 0 && n > self.Spider.DataLimit {
-				break
-			}
-
 			// 未达到设定的分批量时继续收集数据
-			if n < self.dockerCap {
+			if len(self.dataDocker) < self.dockerCap {
 				continue
 			}
-
 			// 执行输出
 			self.dataBatch++
 			self.outputData()
@@ -140,9 +134,6 @@ func (self *Collector) Run() {
 		}()
 		// 只有当收到退出通知并且通道内无数据时，才退出循环
 		for file := range self.FileChan {
-			if self.Spider.DataLimit > 0 && self.fileBatch > uint64(self.Spider.DataLimit) {
-				break
-			}
 			atomic.AddUint64(&self.fileBatch, 1)
 			self.wait.Add(1)
 			go self.outputFile(file)

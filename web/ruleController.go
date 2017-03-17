@@ -19,7 +19,6 @@ func (r *RuleController) Testing(w http.ResponseWriter, req *http.Request) {
 		_spider.OutType = `testing`
 		_spider.DataLimit = 1
 		_spider.DockerCap = 1
-		_spider.DisableAsync = true
 	})
 	w.Write([]byte(`Hello:` + name))
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/admpub/spider/common/mysql"
 	"github.com/admpub/spider/common/util"
-	"github.com/admpub/spider/logs"
 )
 
 /************************ Mysql 输出 ***************************/
@@ -60,7 +59,7 @@ func init() {
 						table.AddColumn(`Url VARCHAR(255)`, `ParentUrl VARCHAR(255)`, `DownloadTime VARCHAR(50)`)
 					}
 					if err := table.Create(); err != nil {
-						logs.Log.Error("%v", err)
+						self.Logger().Error("%v", err)
 						continue
 					} else {
 						setMysqlTable(tName, table)

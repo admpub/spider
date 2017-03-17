@@ -7,7 +7,6 @@ import (
 	"github.com/admpub/spider/common/util"
 	"github.com/admpub/spider/common/xlsx"
 	"github.com/admpub/spider/config"
-	"github.com/admpub/spider/logs"
 	"github.com/admpub/spider/runtime/cache"
 )
 
@@ -37,7 +36,7 @@ func init() {
 				// 添加工作表
 				sheet, err := file.AddSheet(subNamespace)
 				if err != nil {
-					logs.Log.Error("%v", err)
+					self.Logger().Error("%v", err)
 					continue
 				}
 				sheets[subNamespace] = sheet
@@ -76,7 +75,7 @@ func init() {
 		f2, err := os.Stat(folder)
 		if err != nil || !f2.IsDir() {
 			if err := os.MkdirAll(folder, 0777); err != nil {
-				logs.Log.Error("Error: %v\n", err)
+				self.Logger().Error("Error: %v\n", err)
 			}
 		}
 
