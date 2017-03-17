@@ -284,16 +284,16 @@ func (self *Spider) TryFlushFailure() {
 }
 
 // 开始执行蜘蛛
-func (self *Spider) Start() {
+func (self *Spider) Start(logger logs.Logs) {
 	defer func() {
 		if p := recover(); p != nil {
-			logs.Log.Error(" *     Panic  [root]: %v\n", p)
+			logger.Error(" *     Panic  [root]: %v\n", p)
 		}
 		self.lock.Lock()
 		self.status = status.RUN
 		self.lock.Unlock()
 	}()
-	self.RuleTree.Root(GetContext(self, nil))
+	self.RuleTree.Root(GetContext(self, nil, logger))
 }
 
 // 主动崩溃爬虫运行协程

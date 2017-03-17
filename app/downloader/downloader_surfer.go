@@ -8,6 +8,7 @@ import (
 	"github.com/admpub/spider/app/downloader/surfer"
 	"github.com/admpub/spider/app/spider"
 	"github.com/admpub/spider/config"
+	"github.com/admpub/spider/logs"
 )
 
 type Surfer struct {
@@ -20,8 +21,8 @@ var SurferDownloader = &Surfer{
 	phantom: surfer.NewPhantom(config.PHANTOMJS, config.PHANTOMJS_TEMP),
 }
 
-func (self *Surfer) Download(sp *spider.Spider, cReq *request.Request) *spider.Context {
-	ctx := spider.GetContext(sp, cReq)
+func (self *Surfer) Download(sp *spider.Spider, cReq *request.Request, logger logs.Logs) *spider.Context {
+	ctx := spider.GetContext(sp, cReq, logger)
 
 	var resp *http.Response
 	var err error

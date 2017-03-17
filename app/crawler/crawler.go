@@ -74,7 +74,7 @@ func (self *crawler) Run() {
 
 	// 启动任务
 	self.Logger().Debug(` *     Crawler：启动Spider任务`)
-	self.Spider.Start()
+	self.Spider.Start(self.Logger())
 
 	self.Logger().Debug(` *     Crawler：等待处理协程退出`)
 	<-c // 等待处理协程退出
@@ -153,7 +153,7 @@ func (self *crawler) Process(req *request.Request) {
 		}
 	}()
 
-	var ctx = self.Downloader.Download(sp, req) // download page
+	var ctx = self.Downloader.Download(sp, req, self.Logger()) // download page
 	if err := ctx.GetError(); err != nil {
 		// 返回是否作为新的失败请求被添加至队列尾部
 		if sp.DoHistory(req, false) {

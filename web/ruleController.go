@@ -20,5 +20,5 @@ func (r *RuleController) Testing(w http.ResponseWriter, req *http.Request) {
 		_spider.DataLimit = 1
 		_spider.DockerCap = 1
 	})
-	w.Write([]byte(`Hello:` + name))
+	w.Write([]byte(`测试完成：` + name))
 }
