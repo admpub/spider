@@ -421,8 +421,8 @@ func (self *Context) GetError() error {
 }
 
 // 获取日志接口实例。
-func (*Context) Log() logs.Logs {
-	return logs.Log
+func (self *Context) Log() logs.Logs {
+	return self.Logger()
 }
 
 // 获取蜘蛛名称。
