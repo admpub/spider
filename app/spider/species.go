@@ -35,6 +35,42 @@ func (self *SpiderSpecies) Add(sp *Spider) *Spider {
 	return sp
 }
 
+func (self *SpiderSpecies) DelByIndex(index int) {
+	end := len(self.list)
+	if index > end {
+		return
+	}
+	sp := self.list[index]
+	if _, y := self.hash[sp.Name]; y {
+		delete(self.hash, sp.Name)
+	}
+	if index == end {
+		self.list = self.list[:index]
+	} else {
+		self.list = append(self.list[:index], self.list[index+1:]...)
+	}
+}
+
+func (self *SpiderSpecies) DelByName(name string) {
+	_, y := self.hash[name]
+	if !y {
+		return
+	}
+	delete(self.hash, name)
+	for index, sp := range self.list {
+		if sp.Name != name {
+			continue
+		}
+		end := len(self.list) - 1
+		if index == end {
+			self.list = self.list[:index]
+		} else {
+			self.list = append(self.list[:index], self.list[index+1:]...)
+		}
+		break
+	}
+}
+
 // 获取全部蜘蛛种类
 func (self *SpiderSpecies) Get() []*Spider {
 	if !self.sorted {
