@@ -26,12 +26,12 @@
             </Script>
         </AidFunc>
         <ParseFunc>
-            <Script param="ctx">
+            <Script param="ctx"><![CDATA[
 			var query = ctx.GetDom();
 			var adom = query.Find("#js_top_news a");
 			var alen = adom.Length()
 			var i = 0;
-			while(true){
+			for(var i=0,y=alen-1; i<y; i++){
 				var nowhref = adom.Slice(i,i+1).Attr("href");
 				
 				ctx.JsAddQueue({
@@ -40,9 +40,8 @@
 				});
 				
 				console.log(nowhref[0]+"    "+i);
-				i=i+1;
 			}
-            </Script>
+            ]]></Script>
         </ParseFunc>
     </Rule>
 	<Rule name="wenzhang">
