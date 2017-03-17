@@ -503,7 +503,7 @@ func (self *Logic) taskToRun(t *distribute.Task) {
 		if sp == nil {
 			continue
 		}
-		spcopy := sp.Copy()
+		spcopy := sp.Copy().SetConf(*self.AppConf)
 		spcopy.SetPausetime(t.Pausetime)
 		if spcopy.GetLimit() > 0 {
 			spcopy.SetLimit(t.Limit)

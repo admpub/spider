@@ -6,9 +6,10 @@ import (
 	"github.com/admpub/spider/app/crawler"
 	"github.com/admpub/spider/app/spider"
 	"github.com/admpub/spider/logs"
+	"github.com/admpub/spider/runtime/cache"
 )
 
-func RunCrawler(name string, logWriter io.Writer, mws ...func(*spider.Spider)) {
+func RunCrawler(name string, logWriter io.Writer, mws ...func(*spider.Spider)) *cache.Report {
 	logger := logs.NewLog()
 	logger.BeeLogger.Async(false)
 	logger.SetOutput(logWriter)
@@ -16,7 +17,7 @@ func RunCrawler(name string, logWriter io.Writer, mws ...func(*spider.Spider)) {
 	_spider := LogicApp.GetSpiderByName(name)
 	if _spider == nil {
 		logger.Error(`没有找到规则：` + name)
-		return
+		return nil
 	}
 
 	_spider.SuccessInherit = false
@@ -27,4 +28,5 @@ func RunCrawler(name string, logWriter io.Writer, mws ...func(*spider.Spider)) {
 		mws[0](_spider)
 	}
 	c.Init(_spider, logger).Run()
+	return c.Report(true)
 }

@@ -22,6 +22,7 @@ type (
 		Stop()                                     //主动终止
 		CanStop() bool                             //能否终止
 		GetId() int                                //获取引擎ID
+		Report(...bool) *cache.Report
 	}
 	crawler struct {
 		*spider.Spider                 //执行的采集规则
@@ -221,4 +222,29 @@ func (self *crawler) SetId(id int) {
 
 func (self *crawler) GetId() int {
 	return self.id
+}
+
+func (self *crawler) Report(printLog ...bool) *cache.Report {
+	s := <-cache.ReportChan
+	if len(printLog) < 1 || !printLog[0] {
+		return s
+	}
+	logger := self.Logger()
+	if (s.DataNum == 0) && (s.FileNum == 0) {
+		logger.App(" *     [任务小计：%s | KEYIN：%s]   无采集结果，用时 %v！\n", s.SpiderName, s.Keyin, s.Time)
+		return s
+	}
+	logger.Informational(" * ")
+	switch {
+	case s.DataNum > 0 && s.FileNum == 0:
+		logger.App(" *     [任务小计：%s | KEYIN：%s]   共采集数据 %v 条，用时 %v！\n",
+			s.SpiderName, s.Keyin, s.DataNum, s.Time)
+	case s.DataNum == 0 && s.FileNum > 0:
+		logger.App(" *     [任务小计：%s | KEYIN：%s]   共下载文件 %v 个，用时 %v！\n",
+			s.SpiderName, s.Keyin, s.FileNum, s.Time)
+	default:
+		logger.App(" *     [任务小计：%s | KEYIN：%s]   共采集数据 %v 条 + 下载文件 %v 个，用时 %v！\n",
+			s.SpiderName, s.Keyin, s.DataNum, s.FileNum, s.Time)
+	}
+	return s
 }
