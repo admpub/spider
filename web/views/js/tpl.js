@@ -58,7 +58,7 @@ var spidersHtml = function(spiders) {
                   </label>\
                 </div>\
             </td>\
-            <td><a class="btn btn-success btn-xs" href="javascript:;" data-row-id="' + i + '" onclick="testing(this)" target="_blank">测试</a></td>\
+            <td><a class="btn btn-success btn-xs" href="javascript:;" data-row-id="' + i + '" onclick="testing(this)">测试</a></td>\
             <td><label for="spider-' + i + '">' + i + '</label></td>\
             <td><label for="spider-' + i + '" id="spider-name-' + i + '">' + spiders.menu[i].name + '</label></td>\
             <td><label for="spider-' + i + '">' + spiders.menu[i].description + '</label></td>\
@@ -191,13 +191,27 @@ var btnHtml = function(mode, status) {
 
 var logBoxHtml = function(m) {
     if (m == client) {
-        return '<div class="box log client">\
+        return '<div class="box log client" id="log-box-wrap">\
+              <div class="box-switch-bar" onclick="switchHeight(this)"><i class="glyphicon glyphicon-chevron-up"></i></div>\
               <div class="box-body chat" id="log-box">\
               </div>\
           </div>';
     };
-    return '<div class="box log">\
+    return '<div class="box log" id="log-box-wrap">\
+              <div class="box-switch-bar" onclick="switchHeight(this)"><i class="glyphicon glyphicon-chevron-up"></i></div>\
               <div class="box-body chat" id="log-box">\
               </div>\
           </div>';
+}
+
+function switchHeight(obj){
+    var a=$(obj);
+    var i=a.children('i');
+    if(i.hasClass('glyphicon-chevron-up')){
+        i.removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
+        $('#log-box-wrap').css('height','100%');
+    }else{
+        i.removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-up');
+        $('#log-box-wrap').css('height','20%');
+    }
 }

@@ -133,7 +133,18 @@ func (self *Logic) GetAppConf(k ...string) interface{} {
 	}
 	key := strings.Title(k[0])
 	acv := reflect.ValueOf(self.AppConf).Elem()
-	return acv.FieldByName(key).Interface()
+	val := acv.FieldByName(key).Interface()
+	if k[0] == `Limit` {
+		v, _ := val.(int64)
+		if v < 0 {
+			return v * -1
+		}
+		if v == spider.LIMIT {
+			v = 0
+		}
+		return v
+	}
+	return val
 }
 
 // 设置全局参数

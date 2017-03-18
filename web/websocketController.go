@@ -319,11 +319,8 @@ func tplData(mode int) map[string]interface{} {
 	}
 
 	// 采集上限
-	if app.LogicApp.GetAppConf("Limit").(int64) == spider.LIMIT {
-		info["Limit"] = 0
-	} else {
-		info["Limit"] = app.LogicApp.GetAppConf("Limit")
-	}
+	v, _ := app.LogicApp.GetAppConf("Limit").(int64)
+	info["Limit"] = v
 
 	// 自定义配置
 	info["Keyins"] = app.LogicApp.GetAppConf("Keyins")

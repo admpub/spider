@@ -69,6 +69,9 @@ ws.onmessage = function(m) {
             });
 
             layer.full(index);
+            $(window).off().on('resize',function(){
+                layer.full(index);
+            });
             $(".layui-layer-close1").attr("title", "退出").click(function() {
                 Close();
             });

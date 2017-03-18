@@ -123,6 +123,7 @@ h1 {
     margin: auto;
     clear: both;
     border-top-color: #00a65a;
+    z-index: 999;
 }
 
 .client.log.box {
@@ -253,4 +254,16 @@ h1 {
 
 #btn-pause {
     display: none;
+}
+
+.box-switch-bar{
+    position:absolute;
+    width:100px;
+    display:block;
+    cursor:pointer;
+    text-align: center;
+    background: #00a65a;
+    color: white;
+    margin: 0 auto auto 46%;
+    border-radius: 0 0 30px 30px;
 }
