@@ -76,7 +76,15 @@ func appInit() {
 	spiderMenu = func() (spmenu []map[string]string) {
 		// 获取蜘蛛家族
 		for _, sp := range app.LogicApp.GetSpiderLib() {
-			spmenu = append(spmenu, map[string]string{"name": sp.GetName(), "description": sp.GetDescription()})
+			status := `running`
+			if sp.IsStopping() {
+				status = `stopping`
+			}
+			spmenu = append(spmenu, map[string]string{
+				"name":        sp.GetName(),
+				"description": sp.GetDescription(),
+				"status":      status,
+			})
 		}
 		return spmenu
 	}()

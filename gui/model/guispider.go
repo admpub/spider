@@ -19,6 +19,7 @@ type (
 		Description string
 		Index       int
 		checked     bool
+		Status      string
 	}
 	SpiderMenu struct {
 		walk.TableModelBase
@@ -32,11 +33,16 @@ type (
 )
 
 func NewGUISpider(sp *spider.Spider, idx int) *GUISpider {
+	status := `running`
+	if sp.IsStopping() {
+		status = `stopping`
+	}
 	return &GUISpider{
 		Spider:      sp,
 		Title:       sp.GetName(),
 		Description: sp.GetDescription(),
 		Index:       idx,
+		Status:      status,
 	}
 }
 

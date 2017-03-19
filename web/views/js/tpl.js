@@ -51,9 +51,9 @@ var spidersHtml = function(spiders) {
                     <input name="spiders" id="spider-' + i + '" type="checkbox" value="' + spiders.menu[i].name + '"' +
             function() {
                 if (spiders.curr[spiders.menu[i].name]) {
-                    return "checked";
+                    return " checked";
                 }
-                return
+                return '';
             }() + '>\
                   </label>\
                 </div>\
@@ -192,7 +192,6 @@ var btnHtml = function(mode, status) {
 var logBoxHtml = function(m) {
     if (m == client) {
         return '<div class="box log client" id="log-box-wrap">\
-              <div class="box-switch-bar" onclick="switchHeight(this)"><i class="glyphicon glyphicon-chevron-up"></i></div>\
               <div class="box-body chat" id="log-box">\
               </div>\
           </div>';
