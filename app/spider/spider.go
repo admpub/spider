@@ -61,6 +61,16 @@ func (self Spider) Register() *Spider {
 	return Species.Add(&self)
 }
 
+func (self Spider) Update() *Spider {
+	self.status = status.STOPPED
+	sp := Species.GetByName(self.Name)
+	if sp != nil {
+		sp = &self
+		return &self
+	}
+	return Species.Add(&self)
+}
+
 // 指定规则的获取结果的字段名列表
 func (self *Spider) GetItemFields(rule *Rule) []string {
 	return rule.ItemFields
