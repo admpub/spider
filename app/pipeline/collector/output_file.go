@@ -1,16 +1,10 @@
 package collector
 
 import (
-	"bytes"
-	"io"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 
 	"github.com/admpub/spider/app/pipeline/collector/data"
 	bytesSize "github.com/admpub/spider/common/bytes"
-	"github.com/admpub/spider/common/util"
-	"github.com/admpub/spider/config"
 	// "github.com/admpub/spider/runtime/cache"
 )
 
@@ -22,46 +16,18 @@ func (self *Collector) outputFile(file data.FileCell) {
 		self.wait.Done()
 	}()
 
-	// 路径： file/"RuleName"/"time"/"Name"
-	p, n := filepath.Split(filepath.Clean(file["Name"].(string)))
-	// dir := filepath.Join(config.FILE_DIR, util.FileNameReplace(self.namespace())+"__"+cache.StartTime.Format("2006年01月02日 15时04分05秒"), p)
-	dir := filepath.Join(config.FILE_DIR, util.FileNameReplace(self.namespace()), p)
-
-	// 文件名
-	fileName := filepath.Join(dir, util.FileNameReplace(n))
-
-	// 创建/打开目录
-	d, err := os.Stat(dir)
-	if err != nil || !d.IsDir() {
-		if err := os.MkdirAll(dir, 0777); err != nil {
-			self.Logger().Error(
-				" *     Fail  [文件下载：%v | KEYIN：%v | 批次：%v]   %v [ERROR]  %v\n",
-				self.Spider.GetName(), self.Spider.GetKeyin(), atomic.LoadUint64(&self.fileBatch), fileName, err,
-			)
-			return
-		}
-	}
-
-	// 文件不存在就以0777的权限创建文件，如果存在就在写入之前清空内容
-	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
-	if err != nil {
-		self.Logger().Error(
-			" *     Fail  [文件下载：%v | KEYIN：%v | 批次：%v]   %v [ERROR]  %v\n",
-			self.Spider.GetName(), self.Spider.GetKeyin(), atomic.LoadUint64(&self.fileBatch), fileName, err,
-		)
+	output, ok := FileOutput[self.fileOutType]
+	if !ok {
+		self.Logger().Error(`Invaid fileOutType: %v`, self.fileOutType)
 		return
 	}
-
-	size, err := io.Copy(f, bytes.NewReader(file["Bytes"].([]byte)))
-	f.Close()
+	// 执行输出
+	fileName, size, err := output(self, file)
 	if err != nil {
-		self.Logger().Error(
-			" *     Fail  [文件下载：%v | KEYIN：%v | 批次：%v]   %v (%s) [ERROR]  %v\n",
-			self.Spider.GetName(), self.Spider.GetKeyin(), atomic.LoadUint64(&self.fileBatch), fileName, bytesSize.Format(uint64(size)), err,
-		)
+		self.Logger().Error(" *     Fail  [文件下载：%v | KEYIN：%v | 批次：%v]   %v [ERROR]  %v\n",
+			self.Spider.GetName(), self.Spider.GetKeyin(), atomic.LoadUint64(&self.fileBatch), fileName, err)
 		return
 	}
-
 	// 输出统计
 	self.addFileSum(1)
 

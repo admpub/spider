@@ -281,15 +281,19 @@ func (self *Context) FileOutput(name ...string) {
 	var ext string
 	if len(name) > 0 {
 		p, n := path.Split(name[0])
-		if baseName2 := strings.Split(n, ".")[0]; baseName2 != "" {
-			baseName = p + baseName2
+		if len(n) > 0 {
+			if baseName2 := strings.Split(n, ".")[0]; len(baseName2) > 0 {
+				baseName = p + baseName2
+			}
+			ext = path.Ext(n)
+		} else {
+			baseName = p + baseName
 		}
+	}
+	if len(ext) == 0 {
 		ext = path.Ext(n)
 	}
-	if ext == "" {
-		ext = path.Ext(n)
-	}
-	if ext == "" {
+	if len(ext) == 0 {
 		ext = ".html"
 	}
 

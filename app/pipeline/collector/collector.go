@@ -9,6 +9,7 @@ import (
 
 	"github.com/admpub/spider/app/pipeline/collector/data"
 	"github.com/admpub/spider/app/spider"
+	"github.com/admpub/spider/config"
 	"github.com/admpub/spider/logs"
 	"github.com/admpub/spider/runtime/cache"
 )
@@ -20,6 +21,8 @@ type Collector struct {
 	FileChan       chan data.FileCell //文件收集通道
 	dataDocker     []data.DataCell    //分批输出结果缓存
 	outType        string             //输出方式
+	fileOutType    string             //文件输出方式
+	FileOutPath    string             //文件输出路径
 	// size     [2]uint64 //数据总输出流量统计[文本，文件]，文本暂时未统计
 	dataBatch   uint64 //当前文本输出批次
 	fileBatch   uint64 //当前文件输出批次
@@ -38,6 +41,22 @@ func NewCollector(sp *spider.Spider) *Collector {
 		self.outType = sp.OutType
 	} else {
 		self.outType = cache.Task.OutType
+	}
+	if len(sp.FileOutType) > 0 {
+		self.fileOutType = sp.FileOutType
+	} else {
+		self.fileOutType = cache.Task.FileOutType
+	}
+	if len(self.fileOutType) == 0 {
+		self.fileOutType = `local`
+	}
+	if len(sp.FileOutPath) > 0 {
+		self.FileOutPath = sp.FileOutPath
+	} else {
+		self.FileOutPath = cache.Task.FileOutPath
+	}
+	if len(self.FileOutPath) == 0 {
+		self.FileOutPath = config.FILE_DIR
 	}
 	if sp.DockerCap > 0 {
 		self.dockerCap = sp.DockerCap

@@ -16,6 +16,8 @@ type AppConf struct {
 	ThreadNum      int    // 全局最大并发量
 	Pausetime      int64  // 暂停时长参考/ms(随机: Pausetime/2 ~ Pausetime*2)。随机暂停区间(50%~200%)，若规则中直接定义，则不被界面传参覆盖
 	OutType        string // 输出方式
+	FileOutType    string // 文件输出方式
+	FileOutPath    string // 文件输出路径
 	DockerCap      int    // 分段转储容器容量
 	Limit          int64  // 默认限制请求数，0为不限；<0时，限制总请求数；>0则采用规则的自定义限制方案
 	ProxyMinute    int64  // 代理IP更换的间隔分钟数
