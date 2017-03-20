@@ -20,6 +20,7 @@ import (
 	"compress/zlib"
 	"crypto/tls"
 	"io"
+	"log"
 	"math/rand"
 	"net"
 	"net/http"
@@ -27,12 +28,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/admpub/spider/app/downloader/dnscache"
 	"github.com/admpub/spider/app/downloader/surfer/agent"
 )
 
 // Default is the default Download implementation.
 type Surf struct {
 	cookieJar *cookiejar.Jar
+	dnscache  *dnscache.Resolver
 }
 
 func New() Surfer {
@@ -85,8 +88,23 @@ func (self *Surf) buildClient(param *Param) *http.Client {
 		client.Jar = self.cookieJar
 	}
 
+	if param.dnsCacheRefreshRate > 0 {
+		self.dnscache = dnscache.New(param.dnsCacheRefreshRate)
+	}
+
 	transport := &http.Transport{
 		Dial: func(network, addr string) (net.Conn, error) {
+			if self.dnscache != nil {
+				separator := strings.LastIndex(addr, ":")
+				ip, err := self.dnscache.FetchOneString(addr[:separator])
+				if err == nil {
+					_addr := addr
+					addr = ip + addr[separator:]
+					log.Println(`dnscache.FetchOneString("`+_addr+`"):`, addr)
+				} else {
+					log.Println(`dnscache.FetchOneString("`+addr+`"):`, err)
+				}
+			}
 			c, err := net.DialTimeout(network, addr, param.dialTimeout)
 			if err != nil {
 				return nil, err

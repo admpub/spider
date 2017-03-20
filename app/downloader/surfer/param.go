@@ -29,18 +29,19 @@ import (
 )
 
 type Param struct {
-	method        string
-	url           *url.URL
-	proxy         *url.URL
-	body          io.Reader
-	header        http.Header
-	enableCookie  bool
-	dialTimeout   time.Duration
-	connTimeout   time.Duration
-	tryTimes      int
-	retryPause    time.Duration
-	redirectTimes int
-	client        *http.Client
+	method              string
+	url                 *url.URL
+	proxy               *url.URL
+	body                io.Reader
+	header              http.Header
+	enableCookie        bool
+	dialTimeout         time.Duration
+	connTimeout         time.Duration
+	tryTimes            int
+	retryPause          time.Duration
+	redirectTimes       int
+	client              *http.Client
+	dnsCacheRefreshRate time.Duration
 }
 
 func NewParam(req Request) (param *Param, err error) {
@@ -110,6 +111,7 @@ func NewParam(req Request) (param *Param, err error) {
 	param.tryTimes = req.GetTryTimes()
 	param.retryPause = req.GetRetryPause()
 	param.redirectTimes = req.GetRedirectTimes()
+	param.dnsCacheRefreshRate = req.GetDNSCacheRefreshRate()
 	return
 }
 

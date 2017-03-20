@@ -47,6 +47,8 @@ type (
 		GetRedirectTimes() int
 		// select Surf ro PhomtomJS
 		GetDownloaderID() int
+		// dnscache refresh rate
+		GetDNSCacheRefreshRate() time.Duration
 	}
 
 	// 默认实现的Request
@@ -80,6 +82,8 @@ type (
 		// 0为Surf高并发下载器，各种控制功能齐全
 		// 1为PhantomJS下载器，特点破防力强，速度慢，低并发
 		DownloaderID int
+
+		DNSCacheRefreshRate time.Duration
 
 		// 保证prepare只调用一次
 		once sync.Once
@@ -201,4 +205,8 @@ func (self *DefaultRequest) GetRedirectTimes() int {
 func (self *DefaultRequest) GetDownloaderID() int {
 	self.once.Do(self.prepare)
 	return self.DownloaderID
+}
+
+func (self *DefaultRequest) GetDNSCacheRefreshRate() time.Duration {
+	return self.DNSCacheRefreshRate
 }

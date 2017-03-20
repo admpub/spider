@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"time"
+
 	"github.com/admpub/confl"
 	"github.com/admpub/spider/config"
 	"github.com/admpub/spider/logs"
@@ -16,17 +18,18 @@ import (
 // 蜘蛛规则解释器模型
 type (
 	SpiderModel struct {
-		Name            string      `xml:"Name"`
-		Description     string      `xml:"Description"`
-		Pausetime       int64       `xml:"Pausetime"`
-		EnableLimit     bool        `xml:"EnableLimit"`
-		EnableKeyin     bool        `xml:"EnableKeyin"`
-		EnableCookie    bool        `xml:"EnableCookie"`
-		NotDefaultField bool        `xml:"NotDefaultField"`
-		Namespace       *Function   `xml:"Namespace>Script"`
-		SubNamespace    *Function   `xml:"SubNamespace>Script"`
-		Root            *Function   `xml:"Root>Script"`
-		Trunk           []RuleModel `xml:"Rule" json:"Rule"`
+		Name                string        `xml:"Name"`
+		Description         string        `xml:"Description"`
+		Pausetime           int64         `xml:"Pausetime"`
+		EnableLimit         bool          `xml:"EnableLimit"`
+		EnableKeyin         bool          `xml:"EnableKeyin"`
+		EnableCookie        bool          `xml:"EnableCookie"`
+		NotDefaultField     bool          `xml:"NotDefaultField"`
+		DNSCacheRefreshRate time.Duration `xml:"DNSCacheRefreshRate"`
+		Namespace           *Function     `xml:"Namespace>Script"`
+		SubNamespace        *Function     `xml:"SubNamespace>Script"`
+		Root                *Function     `xml:"Root>Script"`
+		Trunk               []RuleModel   `xml:"Rule" json:"Rule"`
 	}
 	RuleModel struct {
 		Name      string    `xml:"name,attr"`
@@ -48,6 +51,7 @@ func (m *SpiderModel) Apply(sp *Spider) *Spider {
 	if sp == nil {
 		sp = &Spider{}
 	}
+	sp.EnableDNSCache(m.DNSCacheRefreshRate)
 	sp.Name = m.Name
 	sp.Description = m.Description
 	sp.EnableCookie = m.EnableCookie

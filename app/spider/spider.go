@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	KEYIN       = util.USE_KEYIN // 若使用Spider.Keyin，则须在规则中设置初始值为USE_KEYIN
-	LIMIT       = math.MaxInt64  // 如希望在规则中自定义控制Limit，则Limit初始值必须为LIMIT
-	FORCED_STOP = "——主动终止Spider——"
+	KEYIN                  = util.USE_KEYIN // 若使用Spider.Keyin，则须在规则中设置初始值为USE_KEYIN
+	LIMIT                  = math.MaxInt64  // 如希望在规则中自定义控制Limit，则Limit初始值必须为LIMIT
+	FORCED_STOP            = "——主动终止Spider——"
+	DNS_CACHE_REFRESH_RATE = 5 * time.Minute
 )
 
 type (
@@ -34,13 +35,14 @@ type (
 		cache.AppConf
 
 		// 以下字段系统自动赋值
-		id        int               // 自动分配的SpiderQueue中的索引
-		subName   string            // 由Keyin转换为的二级标识名
-		reqMatrix *scheduler.Matrix // 请求矩阵
-		timer     *Timer            // 定时器
-		status    int               // 执行状态
-		lock      sync.RWMutex
-		once      sync.Once
+		id                  int               // 自动分配的SpiderQueue中的索引
+		subName             string            // 由Keyin转换为的二级标识名
+		reqMatrix           *scheduler.Matrix // 请求矩阵
+		timer               *Timer            // 定时器
+		status              int               // 执行状态
+		lock                sync.RWMutex
+		once                sync.Once
+		dnsCacheRefreshRate time.Duration
 	}
 	//采集规则树
 	RuleTree struct {
@@ -249,6 +251,7 @@ func (self *Spider) Copy() *Spider {
 
 	ghost.timer = self.timer
 	ghost.status = self.status
+	ghost.dnsCacheRefreshRate = self.dnsCacheRefreshRate
 
 	return ghost
 }
@@ -360,4 +363,23 @@ func (self *Spider) Defer() {
 // 是否输出默认添加的字段 Url/ParentUrl/DownloadTime
 func (self *Spider) OutDefaultField() bool {
 	return !self.NotDefaultField
+}
+
+func (self *Spider) EnableDNSCache(d ...time.Duration) *Spider {
+	if len(d) > 0 {
+		self.dnsCacheRefreshRate = d[0]
+	}
+	if self.dnsCacheRefreshRate <= 0 {
+		self.dnsCacheRefreshRate = DNS_CACHE_REFRESH_RATE
+	}
+	return self
+}
+
+func (self *Spider) DisableDNSCache() *Spider {
+	self.dnsCacheRefreshRate = 0
+	return self
+}
+
+func (self *Spider) GetDNSCacheRefreshRate() time.Duration {
+	return self.dnsCacheRefreshRate
 }

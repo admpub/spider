@@ -34,7 +34,8 @@ type Request struct {
 	//Surfer下载器内核ID
 	//0为Surf高并发下载器，各种控制功能齐全
 	//1为PhantomJS下载器，特点破防力强，速度慢，低并发
-	DownloaderID int
+	DownloaderID        int
+	DNSCacheRefreshRate time.Duration
 
 	proxy  string //当用户界面设置可使用代理IP时，自动设置代理
 	unique string //ID
@@ -70,9 +71,8 @@ func (self *Request) Prepare() error {
 	URL, err := url.Parse(self.Url)
 	if err != nil {
 		return err
-	} else {
-		self.Url = URL.String()
 	}
+	self.Url = URL.String()
 
 	if self.Method == "" {
 		self.Method = "GET"
@@ -328,6 +328,10 @@ func (self *Request) SetPriority(priority int) *Request {
 
 func (self *Request) GetDownloaderID() int {
 	return self.DownloaderID
+}
+
+func (self *Request) GetDNSCacheRefreshRate() time.Duration {
+	return self.DNSCacheRefreshRate
 }
 
 func (self *Request) SetDownloaderID(id int) *Request {

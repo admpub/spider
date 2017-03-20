@@ -2,6 +2,7 @@ package spider
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -129,6 +130,11 @@ func (self *Context) AddQueue(req *request.Request) *Context {
 		req.SetReferer(self.GetUrl())
 	}
 
+	// 设置DNS缓存刷新时间，≤0时禁用DNS缓存
+	if req.DNSCacheRefreshRate <= 0 {
+		req.DNSCacheRefreshRate = self.spider.GetDNSCacheRefreshRate()
+	}
+
 	self.spider.RequestPush(req)
 	self.ruleCount[req.Rule]++
 	return self
@@ -186,6 +192,18 @@ func (self *Context) JsAddQueue(jreq map[string]interface{}) *Context {
 	if t, ok := jreq["DownloaderID"].(int64); ok {
 		req.DownloaderID = int(t)
 	}
+
+	// 设置DNS缓存刷新时间，≤0时禁用DNS缓存
+	if t, ok := jreq["DNSCacheRefreshRate"].(int64); ok {
+		req.DNSCacheRefreshRate = time.Duration(t)
+	} else {
+		//解析时间字符串（比如2h30m表示2小时30分钟），有效的后缀有：ns,us,ms,s,m,h（它们分别表示纳秒，微秒，毫秒，秒，分，时）
+		req.DNSCacheRefreshRate, _ = time.ParseDuration(fmt.Sprint(jreq["DNSCacheRefreshRate"]))
+	}
+	if req.DNSCacheRefreshRate <= 0 {
+		req.DNSCacheRefreshRate = self.spider.GetDNSCacheRefreshRate()
+	}
+
 	if t, ok := jreq["Temp"].(map[string]interface{}); ok {
 		req.Temp = t
 	}
