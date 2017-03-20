@@ -240,7 +240,7 @@ func (self *Logic) SpiderPrepare(original []*spider.Spider) App {
 	self.SpiderQueue.Reset()
 	// 遍历任务
 	for _, sp := range original {
-		spcopy := sp.Copy().SetConf(*self.AppConf)
+		spcopy := sp.Copy()
 		spcopy.SetPausetime(self.AppConf.Pausetime)
 		if spcopy.GetLimit() == spider.LIMIT {
 			spcopy.SetLimit(self.AppConf.Limit)
@@ -514,7 +514,7 @@ func (self *Logic) taskToRun(t *distribute.Task) {
 		if sp == nil {
 			continue
 		}
-		spcopy := sp.Copy().SetConf(*self.AppConf)
+		spcopy := sp.Copy()
 		spcopy.SetPausetime(t.Pausetime)
 		if spcopy.GetLimit() > 0 {
 			spcopy.SetLimit(t.Limit)

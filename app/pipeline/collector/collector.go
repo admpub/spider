@@ -56,6 +56,7 @@ func NewCollector(sp *spider.Spider) *Collector {
 		self.FileOutPath = cache.Task.FileOutPath
 	}
 	if len(self.FileOutPath) == 0 {
+		panic(`self.FileOutPath`)
 		self.FileOutPath = config.FILE_DIR
 	}
 	if sp.DockerCap > 0 {
